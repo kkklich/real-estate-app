@@ -4,8 +4,10 @@
         <mat-spinner diameter="32"></mat-spinner>
     </div> -->
     <div>
-        <canvas baseChart [data]="barChartData" [labels]="barChartLabels" [type]="barChartType"
-            [options]="barChartOptions" height="220">
+        @if (chartData$ | async; as chartData) {
+        <canvas baseChart [data]="chartData" [labels]="barChartLabels" [type]="barChartType" [options]="barChartOptions"
+            height="220">
         </canvas>
+        }
     </div>
 </mat-card>

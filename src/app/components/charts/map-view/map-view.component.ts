@@ -1,6 +1,5 @@
 import { Component } from '@angular/core';
 // import { Marker, latLng, tileLayer } from 'leaflet';
-import { RealEstateService } from '../../../services/real-estate.service';
 import { MatCard } from "@angular/material/card";
 // import { LeafletModule } from '@asymmetrik/ngx-leaflet';
 
@@ -25,7 +24,7 @@ export class MapViewComponent {
 
   // propertyMarkers: Marker[] = [];
 
-  constructor(private readonly realEstateService: RealEstateService) { }
+  constructor() { }
 
   ngOnInit() {
     // this.realEstateService.getDashboardData().subscribe(data => {
