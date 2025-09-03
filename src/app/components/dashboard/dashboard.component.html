@@ -1,8 +1,10 @@
 <mat-toolbar color="primary">
   <span class="logo">Real Estate Dashboard</span>
   <span class="spacer"></span>
-  <app-search-filter></app-search-filter>
 </mat-toolbar>
+<div class="filter-container">
+  <app-search-filter (groupByTypeChange)="onGroupByTypeChange($event)"></app-search-filter>
+</div>
 
 
 <div class="dashboard-container">

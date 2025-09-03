@@ -1,37 +1,52 @@
-:host {
+// Modern styles for the search filter select
+.search-filter-container {
     display: flex;
-    gap: 14px;
     align-items: center;
+    justify-content: flex-start;
+    gap: 1.5rem;
+    padding: 1rem 0;
+    flex-wrap: wrap;
 }
 
-.search-field {
-    width: 260px;
+.grouping-select {
+    min-width: 220px;
     background: #fff;
     border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(60, 60, 60, 0.07);
+    flex: 1 1 220px;
+    max-width: 100%;
 }
 
-mat-form-field,
-mat-select {
-    background: #fff;
-    border-radius: 8px;
-    min-width: 135px;
-    font-size: .99rem;
-    box-shadow: 0 1.5px 6px rgba(80, 106, 139, 0.06);
+.mat-option {
+    font-size: 1rem;
+    color: #22294a;
 }
 
-mat-select {
-    padding: 0 8px;
-}
-
-@media (max-width: 700px) {
-    :host {
+@media (max-width: 600px) {
+    .search-filter-container {
         flex-direction: column;
-        gap: 8px;
-        width: 100%;
         align-items: stretch;
+        gap: 0.75rem;
+        padding: 0.5rem 0;
     }
 
-    .search-field {
+    .grouping-select {
+        min-width: 0;
         width: 100%;
+        box-shadow: none;
     }
+}
+
+.mat-form-field-infix {
+    padding: 0.75rem 1.2rem !important;
+}
+
+.mat-select-value-text {
+    font-weight: 500;
+    color: #22294a;
+}
+
+.mat-option {
+    font-size: 1rem;
+    color: #22294a;
 }
