@@ -1,0 +1,21 @@
+<mat-toolbar color="primary">
+  <span class="logo">Real Estate Dashboard</span>
+  <span class="spacer"></span>
+  <app-search-filter></app-search-filter>
+</mat-toolbar>
+
+
+<div class="dashboard-container">
+  @if(this.isBrowser){
+  <div class="dashboard-grid">
+    <!-- <app-kpi-cards></app-kpi-cards>
+    <app-bar-chart></app-bar-chart>
+    <app-scatter-chart></app-scatter-chart>
+    <app-pie-chart></app-pie-chart>
+    <app-map-view></app-map-view>
+    <app-line-chart></app-line-chart> -->
+    <app-bar-chart></app-bar-chart>
+    <app-map-view></app-map-view>
+  </div>
+  }
+</div>

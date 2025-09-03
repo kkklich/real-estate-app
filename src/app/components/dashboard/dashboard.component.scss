@@ -1,0 +1,108 @@
+.dashboard-container {
+  padding: 32px 16px;
+  max-width: 1380px;
+  margin: 0 auto;
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: auto;
+  gap: 24px;
+  grid-template-areas:
+    "kpi kpi barchart"
+    "scatter pie map"
+    "line line map";
+}
+
+app-kpi-cards {
+  grid-area: kpi;
+  min-width: 0;
+}
+
+app-bar-chart {
+  grid-area: barchart;
+  min-width: 0;
+}
+
+app-scatter-chart {
+  grid-area: scatter;
+  min-width: 0;
+}
+
+app-pie-chart {
+  grid-area: pie;
+  min-width: 0;
+}
+
+app-map-view {
+  grid-area: map;
+  min-width: 0;
+}
+
+app-line-chart {
+  grid-area: line;
+  min-width: 0;
+}
+
+mat-card {
+  border-radius: 14px;
+  box-shadow: 0 4px 24px 0 rgba(80, 106, 139, 0.08);
+  border: none;
+  padding: 20px 22px 18px 22px;
+}
+
+.card-title {
+  font-size: 1.17rem;
+  font-weight: 600;
+  color: #22294a;
+  margin-bottom: 18px;
+  letter-spacing: 0.01em;
+}
+
+@media (max-width: 1100px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+      "kpi barchart"
+      "scatter pie"
+      "map map"
+      "line line";
+  }
+}
+
+@media (max-width: 700px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "kpi"
+      "barchart"
+      "scatter"
+      "pie"
+      "map"
+      "line";
+    gap: 16px;
+  }
+
+  .dashboard-container {
+    padding: 8px;
+  }
+}
+
+mat-toolbar {
+  background: #f6fafd;
+  color: #22294a;
+  box-shadow: none;
+  border-bottom: 1px solid #e8eaf4;
+
+  .logo {
+    font-weight: 700;
+    font-size: 1.55rem;
+    letter-spacing: -0.02em;
+    color: #234392;
+  }
+
+  .spacer {
+    flex: 1 1 auto;
+  }
+}

@@ -1,0 +1,37 @@
+:host {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+}
+
+.search-field {
+    width: 260px;
+    background: #fff;
+    border-radius: 8px;
+}
+
+mat-form-field,
+mat-select {
+    background: #fff;
+    border-radius: 8px;
+    min-width: 135px;
+    font-size: .99rem;
+    box-shadow: 0 1.5px 6px rgba(80, 106, 139, 0.06);
+}
+
+mat-select {
+    padding: 0 8px;
+}
+
+@media (max-width: 700px) {
+    :host {
+        flex-direction: column;
+        gap: 8px;
+        width: 100%;
+        align-items: stretch;
+    }
+
+    .search-field {
+        width: 100%;
+    }
+}

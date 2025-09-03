@@ -1,0 +1,11 @@
+<mat-card>
+    <div class="card-title">Average Price per District</div>
+    <!-- <div *ngIf="loading" style="text-align:center; padding:2em 0;">
+        <mat-spinner diameter="32"></mat-spinner>
+    </div> -->
+    <div>
+        <canvas baseChart [data]="barChartData" [labels]="barChartLabels" [type]="barChartType"
+            [options]="barChartOptions" height="220">
+        </canvas>
+    </div>
+</mat-card>
