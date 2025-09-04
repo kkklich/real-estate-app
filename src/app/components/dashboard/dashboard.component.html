@@ -16,7 +16,7 @@
     <app-pie-chart></app-pie-chart>
     <app-map-view></app-map-view>
     <app-line-chart></app-line-chart> -->
-    <app-bar-chart></app-bar-chart>
+    <app-bar-chart [chartData$]="data$" [chartTitle]="calculateStatisticsService.groupedBy"></app-bar-chart>
     <app-map-view></app-map-view>
   </div>
   }

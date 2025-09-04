@@ -8,7 +8,14 @@ export class CalculateStatisticsService {
 
     private readonly data$ = new BehaviorSubject<PropertydataAPI>({ totalCount: 0, data: [] });
     private loaded = false;
-    public groupedBy: string = 'market';
+    private _groupedBy: string = 'market';
+    public get groupedBy(): string {
+        return this._groupedBy;
+    }
+    public set groupedBy(value: string) {
+        console.log('Setting groupedBy to:', value);
+        this._groupedBy = value?.toLowerCase() ?? '';
+    }
 
     public groupByTypes: string[] = [
         'Floor',
@@ -37,7 +44,7 @@ export class CalculateStatisticsService {
         return this.data$.asObservable();
     }
 
-    public getBarChartDataByBuildingType$(groupBy: string = 'buildingType'): Observable<{ datasets: { data: number[], label: string }[], labels: string[] }> {
+    public getBarChartDataByBuildingType$(): Observable<{ datasets: { data: number[], label: string }[], labels: string[] }> {
         return this.getData().pipe(
             map(results => {
 
@@ -51,7 +58,7 @@ export class CalculateStatisticsService {
                 }
                 const groupMap = new Map<string, number>();
                 results.data.forEach(item => {
-                    let key = this.getNested(item, groupBy);
+                    let key = this.getNested(item, this._groupedBy);
 
                     if (typeof key === 'number') {
                         key = Math.round(key).toString(); // Round and convert to string for grouping

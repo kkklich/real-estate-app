@@ -20,6 +20,11 @@ import { CalculateStatisticsService } from '../../services/calculate-statistics'
 export class SearchFilterComponent {
 
   @Output() groupByTypeChange = new EventEmitter<string | null>();
+  public selectedType: string | null = null;
+
+  // get groupByType(): string {
+  //   return this.calculateStatisticsService.groupedBy;
+  // }
 
   constructor(readonly calculateStatisticsService: CalculateStatisticsService) { }
 

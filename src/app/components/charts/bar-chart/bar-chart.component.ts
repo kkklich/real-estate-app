@@ -2,7 +2,7 @@
 import { MatCardModule } from '@angular/material/card';
 import { AsyncPipe } from '@angular/common';
 import { BaseChartDirective } from 'ng2-charts';
-import { Component, OnInit } from '@angular/core';
+import { Component, Input } from '@angular/core';
 import { ChartData, ChartOptions } from 'chart.js';
 import { CalculateStatisticsService } from '../../../services/calculate-statistics';
 import { map, Observable } from 'rxjs';
@@ -14,10 +14,15 @@ import { Property } from '../../../models/property';
   templateUrl: './bar-chart.component.html',
   styleUrl: './bar-chart.component.scss'
 })
-export class BarChartComponent implements OnInit {
+export class BarChartComponent {
+
+  @Input() chartData$!: Observable<ChartData<'bar'>>;
+  @Input() chartTitle: string = '';
 
   public properties$!: Observable<Property[]>;
   filters = { city: '', market: '' };
+  barChartType: 'bar' = 'bar';
+  barChartLabels: string[] = [];
 
   barChartOptions: ChartOptions<'bar'> = {
     responsive: true,
@@ -48,25 +53,6 @@ export class BarChartComponent implements OnInit {
     }
   };
 
-  barChartType: 'bar' = 'bar';
-  barChartLabels: string[] = [];
-  chartData$!: Observable<ChartData<'bar'>>;
-  loading = true;
+  constructor() { }
 
-  constructor(readonly calculateStatisticsService: CalculateStatisticsService) { }
-
-  ngOnInit(): void {
-    this.loadchartData(this.calculateStatisticsService.groupedBy);
-  }
-
-  private loadchartData(groupType?: string): void {
-    this.chartData$ = this.calculateStatisticsService.getBarChartDataByBuildingType$(groupType).pipe(
-      map(data => data ?? { datasets: [], labels: [] } as ChartData<'bar'>)
-    );
-  }
-
-  onFiltersChange(filter: string) {
-    this.calculateStatisticsService.groupedBy = filter;
-    this.loadchartData(this.calculateStatisticsService.groupedBy);
-  }
 }

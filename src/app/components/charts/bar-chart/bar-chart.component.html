@@ -1,5 +1,5 @@
 <mat-card>
-    <div class="card-title">{{calculateStatisticsService.groupedBy}}</div>
+    <div class="card-title">{{chartTitle}}</div>
     <div>
         @if (chartData$ | async; as chartData) {
         <canvas baseChart [data]="chartData" [labels]="barChartLabels" [type]="barChartType" [options]="barChartOptions"

@@ -1,4 +1,7 @@
-import { Component, Inject, PLATFORM_ID, ViewChild } from '@angular/core';
+import { Component, Inject, PLATFORM_ID } from '@angular/core';
+import { CalculateStatisticsService } from '../../services/calculate-statistics';
+import { ChartData } from 'chart.js';
+import { Observable, map } from 'rxjs';
 import { SearchFilterComponent } from "../search-filter/search-filter-component";
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MapViewComponent } from "../charts/map-view/map-view.component";
@@ -18,22 +21,24 @@ import { isPlatformBrowser } from '@angular/common';
 })
 export class DashboardComponent {
 
-  @ViewChild(BarChartComponent) barChartComponent!: BarChartComponent;
   isBrowser = false;
-
-  public onGroupByTypeChange(type: string | null) {
-    // Handle the change event here
-    console.log('Group by type changedsss:', type);
-    // You can add your action logic here
-    if (this.barChartComponent && type) {
-      this.barChartComponent.onFiltersChange(type);
-    }
-  }
+  data$!: Observable<ChartData<'bar'>>;
 
   constructor(
-    @Inject(PLATFORM_ID) private readonly platformId: Object
+    @Inject(PLATFORM_ID) private readonly platformId: Object,
+    readonly calculateStatisticsService: CalculateStatisticsService
   ) {
     this.isBrowser = isPlatformBrowser(this.platformId);
+    this.loadChartData();
+  }
+  public onGroupByTypeChange(type: string | null) {
+    this.calculateStatisticsService.groupedBy = type || 'buildingType';
+    this.loadChartData();
   }
 
+  private loadChartData() {
+    this.data$ = this.calculateStatisticsService.getBarChartDataByBuildingType$().pipe(
+      map(data => data ?? { datasets: [], labels: [] } as ChartData<'bar'>)
+    );
+  }
 }
