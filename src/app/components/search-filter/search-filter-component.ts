@@ -3,6 +3,7 @@ import { Component, Output, EventEmitter } from '@angular/core';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
+import { CalculateStatisticsService } from '../../services/calculate-statistics';
 
 @Component({
   selector: 'app-search-filter',
@@ -17,28 +18,12 @@ import { MatSelectModule } from '@angular/material/select';
   styleUrl: './search-filter-component.scss'
 })
 export class SearchFilterComponent {
-  searchText = '';
-  district = '';
-  propertyType = '';
-  priceRange = '';
 
   @Output() groupByTypeChange = new EventEmitter<string | null>();
 
-  protected groupByTypes: string[] = [
-    'floor',
-    'market',
-    'buildingType',
-    'area',
-    'private',
-    'location.district'
-  ];
-
-  selectedType: string | null = null;
+  constructor(readonly calculateStatisticsService: CalculateStatisticsService) { }
 
   public onGroupByTypeChange(value: string | null) {
-    console.log('Group by type changed:', value);
     this.groupByTypeChange.emit(value);
   }
-
-  constructor() { }
 }

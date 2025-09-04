@@ -5,7 +5,7 @@ import { BaseChartDirective } from 'ng2-charts';
 import { Component, OnInit } from '@angular/core';
 import { ChartData, ChartOptions } from 'chart.js';
 import { CalculateStatisticsService } from '../../../services/calculate-statistics';
-import { map, Observable, of } from 'rxjs';
+import { map, Observable } from 'rxjs';
 import { Property } from '../../../models/property';
 
 @Component({
@@ -51,29 +51,22 @@ export class BarChartComponent implements OnInit {
   barChartType: 'bar' = 'bar';
   barChartLabels: string[] = [];
   chartData$!: Observable<ChartData<'bar'>>;
-  groupedBy: string = 'market';
   loading = true;
 
-  constructor(private readonly calculateStatisticsService: CalculateStatisticsService) { }
+  constructor(readonly calculateStatisticsService: CalculateStatisticsService) { }
 
   ngOnInit(): void {
-    this.loadchartData(this.groupedBy);
+    this.loadchartData(this.calculateStatisticsService.groupedBy);
   }
 
   private loadchartData(groupType?: string): void {
-    // this.chartData$ = of({ datasets: [], labels: [] } as ChartData<'bar'>);
     this.chartData$ = this.calculateStatisticsService.getBarChartDataByBuildingType$(groupType).pipe(
       map(data => data ?? { datasets: [], labels: [] } as ChartData<'bar'>)
     );
-
-    console.log('Chart data loaded:', this.chartData$);
   }
 
   onFiltersChange(filter: string) {
-    this.groupedBy = filter;
-    console.log('Grouped by changed t3333o:', this.groupedBy);
-    this.loadchartData(this.groupedBy);
-
-    // this.chartData$ = of({ datasets: [], labels: [] } as ChartData<'bar'>);
+    this.calculateStatisticsService.groupedBy = filter;
+    this.loadchartData(this.calculateStatisticsService.groupedBy);
   }
 }

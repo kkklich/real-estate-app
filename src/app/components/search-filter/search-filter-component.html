@@ -1,8 +1,9 @@
 <div class="search-filter-container">
     <mat-form-field appearance="fill" class="grouping-select">
         <mat-label>Grupowanie</mat-label>
-        <mat-select [(value)]="selectedType" (selectionChange)="onGroupByTypeChange($event.value)">
-            @for (type of groupByTypes; track type) {
+        <mat-select [(value)]="calculateStatisticsService.groupedBy"
+            (selectionChange)="onGroupByTypeChange($event.value)">
+            @for (type of calculateStatisticsService.groupByTypes; track type) {
             <mat-option [value]="type">
                 {{ type }}
             </mat-option>

@@ -8,9 +8,18 @@ export class CalculateStatisticsService {
 
     private readonly data$ = new BehaviorSubject<PropertydataAPI>({ totalCount: 0, data: [] });
     private loaded = false;
+    public groupedBy: string = 'market';
+
+    public groupByTypes: string[] = [
+        'Floor',
+        'Market',
+        'BuildingType',
+        'Area',
+        'Private',
+        'Location.district'
+    ];
 
     constructor(private readonly realEstateService: RealEstateDataService) { }
-
 
     fetchData(): Observable<PropertydataAPI> {
         return this.realEstateService.getDashboardData().pipe(

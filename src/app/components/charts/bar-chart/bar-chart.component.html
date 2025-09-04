@@ -1,8 +1,5 @@
 <mat-card>
-    <div class="card-title">{{groupedBy}}</div>
-    <!-- <div *ngIf="loading" style="text-align:center; padding:2em 0;">
-        <mat-spinner diameter="32"></mat-spinner>
-    </div> -->
+    <div class="card-title">{{calculateStatisticsService.groupedBy}}</div>
     <div>
         @if (chartData$ | async; as chartData) {
         <canvas baseChart [data]="chartData" [labels]="barChartLabels" [type]="barChartType" [options]="barChartOptions"
