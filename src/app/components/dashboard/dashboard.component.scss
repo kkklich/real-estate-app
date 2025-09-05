@@ -57,7 +57,8 @@ app-pie-chart {
 
 app-map-view {
   grid-area: map;
-  min-width: 0;
+  width: 500px;
+  height: 500px;
 }
 
 app-line-chart {
