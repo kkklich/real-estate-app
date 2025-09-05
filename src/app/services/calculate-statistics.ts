@@ -96,7 +96,7 @@ export class CalculateStatisticsService {
         );
     }
 
-    private getNested(obj: any, path: string): any {
+    public getNested(obj: any, path: string): any {
         return path.split('.').reduce((acc, part) => (acc ? acc[part] : undefined), obj);
     }
 }
