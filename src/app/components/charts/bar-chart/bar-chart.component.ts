@@ -15,7 +15,6 @@ import { Property } from '../../../models/property';
 })
 export class BarChartComponent {
 
-  // @Input() chartData$!: Observable<ChartData<'bar'>>;
   @Input() chartData!: Signal<ChartData<'bar'>>;
   @Input() chartTitle: string = '';
 

@@ -81,8 +81,8 @@ export class MapViewComponent implements AfterViewInit {
 
       const minValue = Math.min(...this.points.map(p => p.value));
       const maxValue = Math.max(...this.points.map(p => p.value));
-      const ratio = ((value - minValue) / (maxValue - minValue)) //* 1000;
-      // console.log(ratio);
+      const ratio = ((value - minValue) / (maxValue - minValue));
+
       clamped = Math.max(0, Math.min(1, ratio)); // keep between 0 and 1
     } else {
       const ratioString = this.scoreTags01(this.points.map(p => p.value.toString()));
