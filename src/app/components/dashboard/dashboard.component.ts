@@ -1,7 +1,6 @@
 import { Component, Inject, PLATFORM_ID } from '@angular/core';
 import { CalculateStatisticsService } from '../../services/calculate-statistics';
-import { ChartData } from 'chart.js';
-import { Observable, map } from 'rxjs';
+import { computed } from '@angular/core';
 import { SearchFilterComponent } from "../search-filter/search-filter-component";
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MapViewComponent } from "../charts/map-view/map-view.component";
@@ -22,23 +21,18 @@ import { isPlatformBrowser } from '@angular/common';
 export class DashboardComponent {
 
   isBrowser = false;
-  data$!: Observable<ChartData<'bar'>>;
+  public barChartDataByBuildingType = computed(() =>
+    this.calculateStatisticsService.barChartDataByBuildingType()
+  );
 
   constructor(
     @Inject(PLATFORM_ID) private readonly platformId: Object,
     readonly calculateStatisticsService: CalculateStatisticsService
   ) {
     this.isBrowser = isPlatformBrowser(this.platformId);
-    this.loadChartData();
   }
   public onGroupByTypeChange(type: string | null) {
-    this.calculateStatisticsService.groupedBy = type || 'buildingType';
-    this.loadChartData();
+    this.calculateStatisticsService.groupedBy.set(type || 'buildingType');
   }
 
-  private loadChartData() {
-    this.data$ = this.calculateStatisticsService.getBarChartDataByBuildingType$().pipe(
-      map(data => data ?? { datasets: [], labels: [] } as ChartData<'bar'>)
-    );
-  }
 }

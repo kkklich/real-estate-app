@@ -1,9 +1,9 @@
 <mat-card>
     <div class="card-title">{{chartTitle}}</div>
     <div>
-        @if (chartData$ | async; as chartData) {
-        <canvas baseChart [data]="chartData" [labels]="barChartLabels" [type]="barChartType" [options]="barChartOptions"
-            height="220">
+        @if (chartData()) {
+        <canvas baseChart [data]="chartData()" [labels]="barChartLabels" [type]="barChartType"
+            [options]="barChartOptions" height="220">
         </canvas>
         }
     </div>

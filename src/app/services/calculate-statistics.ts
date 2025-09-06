@@ -1,100 +1,86 @@
-import { Injectable } from "@angular/core";
+import { Injectable, signal, computed } from "@angular/core";
 import { RealEstateDataService } from './real-estate-data.service';
-import { BehaviorSubject, map, Observable, of, tap } from "rxjs";
 import { PropertydataAPI } from "../models/property";
 
 @Injectable({ providedIn: 'root' })
-export class CalculateStatisticsService {
 
-    private readonly data$ = new BehaviorSubject<PropertydataAPI>({ totalCount: 0, data: [] });
-    private loaded = false;
-    private _groupedBy: string = 'market';
-    public get groupedBy(): string {
-        return this._groupedBy;
-    }
-    public set groupedBy(value: string) {
-        console.log('Setting groupedBy to:', value);
-        this._groupedBy = value?.toLowerCase() ?? '';
-    }
+export class CalculateStatisticsService {
+    private readonly data = signal<PropertydataAPI>({ totalCount: 0, data: [] });
+    private readonly loaded = signal(false);
+    public groupedBy = signal<string>('market');
 
     public groupByTypes: string[] = [
-        'Floor',
-        'Market',
-        'BuildingType',
-        'Area',
-        'Private',
-        'Location.district'
+        'price',
+        'pricePerMeter',
+        'floor',
+        'market',
+        'buildingType',
+        'area',
+        'private',
+        'location.district'
     ];
 
     constructor(private readonly realEstateService: RealEstateDataService) { }
 
-    fetchData(): Observable<PropertydataAPI> {
-        return this.realEstateService.getDashboardData().pipe(
-            tap(data => {
-                this.data$.next(data);
-                this.loaded = true;
-            })
-        );
+    fetchData() {
+        this.realEstateService.getDashboardData().subscribe(data => {
+            this.data.set(data);
+            this.loaded.set(true);
+        });
     }
 
-    getData(): Observable<PropertydataAPI> {
-        if (!this.loaded) {
-            this.fetchData().subscribe();
+    getData() {
+        if (!this.loaded()) {
+            this.fetchData();
         }
-        return this.data$.asObservable();
+        return this.data;
     }
 
-    public getBarChartDataByBuildingType$(): Observable<{ datasets: { data: number[], label: string }[], labels: string[] }> {
-        return this.getData().pipe(
-            map(results => {
+    public barChartDataByBuildingType = computed(() => {
+        const results = this.data();
+        const groupedBy = this.groupedBy();
+        if (!results || results.data.length === 0) {
+            return {
+                datasets: [
+                    { data: [], label: 'Liczba ofert' }
+                ],
+                labels: []
+            };
+        }
+        const groupMap = new Map<string, number>();
+        results.data.forEach(item => {
+            let key = this.getNested(item, groupedBy);
+            if (typeof key === 'number') {
+                key = Math.round(key).toString();
+            } else if (typeof key === 'boolean') {
+                key = key.toString();
+            } else {
+                key = key ?? 'Unknown';
+            }
+            groupMap.set(key, (groupMap.get(key) || 0) + 1);
+        });
+        const keys = Array.from(groupMap.keys());
+        const allNumeric = keys.every(key => !isNaN(Number(key)));
+        let labels: string[];
+        let counts: number[];
+        if (allNumeric) {
+            const pairs = keys
+                .map(key => ({ key, value: groupMap.get(key.toString())! }))
+                .sort((a, b) => Number(a.key) - Number(b.key));
 
-                if (!results || results.data.length === 0) {
-                    return {
-                        datasets: [
-                            { data: [], label: 'Liczba ofert' }
-                        ],
-                        labels: []
-                    };
-                }
-                const groupMap = new Map<string, number>();
-                results.data.forEach(item => {
-                    let key = this.getNested(item, this._groupedBy);
-
-                    if (typeof key === 'number') {
-                        key = Math.round(key).toString(); // Round and convert to string for grouping
-                    } else {
-                        key = key ?? 'Unknown';
-                    }
-
-                    groupMap.set(key, (groupMap.get(key) || 0) + 1);
-                });
-
-
-                const keys = Array.from(groupMap.keys());
-                const allNumeric = keys.every(key => !isNaN(Number(key)));
-
-                let labels: string[];
-                let counts: number[];
-
-                if (allNumeric) {
-                    const pairs = keys
-                        .map(key => ({ key, value: groupMap.get(key)! }))
-                        .sort((a, b) => Number(a.key) - Number(b.key));
-                    labels = pairs.map(pair => pair.key);
-                    counts = pairs.map(pair => pair.value);
-                } else {
-                    labels = keys;
-                    counts = keys.map(key => groupMap.get(key)!);
-                }
-                return {
-                    datasets: [
-                        { data: counts, label: 'Liczba ofert' }
-                    ],
-                    labels
-                };
-            })
-        );
-    }
+            labels = pairs.map(pair => pair.key.toString());
+            counts = pairs.map(pair => pair.value);
+        } else {
+            labels = keys;
+            counts = keys.map(key => groupMap.get(key)!);
+        }
+        return {
+            datasets: [
+                { data: counts, label: 'Liczba ofert' }
+            ],
+            labels
+        };
+    });
 
     public getNested(obj: any, path: string): any {
         return path.split('.').reduce((acc, part) => (acc ? acc[part] : undefined), obj);

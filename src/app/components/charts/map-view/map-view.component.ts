@@ -1,4 +1,4 @@
-import { AfterViewInit, Component } from '@angular/core';
+import { AfterViewInit, Component, effect, signal, Signal, untracked } from '@angular/core';
 import * as maplibregl from 'maplibre-gl';
 import { CalculateStatisticsService } from '../../../services/calculate-statistics';
 import { Observable } from 'rxjs';
@@ -12,10 +12,9 @@ import { PropertydataAPI } from '../../../models/property';
 })
 export class MapViewComponent implements AfterViewInit {
 
-  //todo please refactor this code that values from data$ will be used to generate points on the map
-  data$!: Observable<PropertydataAPI>;
-  private minValue = 0;
-  private maxValue = 100;
+  data$!: Signal<PropertydataAPI>;
+
+  private readonly viewReady = signal(false);
 
   private points: Array<{ lat: number, lng: number, label: string, value: number }> = [];
 
@@ -24,23 +23,31 @@ export class MapViewComponent implements AfterViewInit {
 
   }
 
-  ngAfterViewInit(): void {
-    this.data$.subscribe(data => {
-      this.points = (data.data || []).map(item => {
-        const groupedBy = this.calculateStatisticsService.groupedBy;
+
+  private readonly pointsEffect = effect(() => {
+    const data = this.data$();            // read the signal
+    const items = data?.data ?? [];
+
+    const groupedBy = this.calculateStatisticsService.groupedBy(); // call if it's a signal/method
+    this.points = items
+      .map(item => {
         const value = this.calculateStatisticsService.getNested(item, groupedBy);
-        console.log('Item:', item, 'GroupedBy:', groupedBy, 'Value:', value);
         return {
           lat: item.location.lat,
           lng: item.location.lon,
           label: item.title ?? 'Unknown',
-          value: value !== null && value !== undefined ? Number(value) : 0
+          value: value
         };
-      }).filter(p => p.lat && p.lng);
-      if (this.points.length) {
-        this.generatemap();
-      }
-    });
+      })
+      .filter(p => typeof p.lat === 'number' && typeof p.lng === 'number'); // keep valid 0 coords
+
+    if (this.viewReady() && this.points.length) {
+      untracked(() => this.generatemap()); // avoid tracking imperative work
+    }
+  });
+
+  ngAfterViewInit(): void {
+    this.viewReady.set(true);
   }
 
   private generatemap(): void {
@@ -53,8 +60,6 @@ export class MapViewComponent implements AfterViewInit {
     });
     map.addControl(new maplibregl.NavigationControl(), 'top-right');
 
-    //todo check if  p.value is number
-
     this.points.forEach(p => {
       const color = this.getColorGradient(p.value); // decide color
 
@@ -64,8 +69,6 @@ export class MapViewComponent implements AfterViewInit {
         .addTo(map);
     });
 
-
-    console.log('sssss', this.points);
     // 🔹 Fit map to all points
     const bounds = new maplibregl.LngLatBounds();
     this.points.forEach(p => bounds.extend([p.lng, p.lat]));
@@ -79,8 +82,11 @@ export class MapViewComponent implements AfterViewInit {
       const minValue = Math.min(...this.points.map(p => p.value));
       const maxValue = Math.max(...this.points.map(p => p.value));
       const ratio = ((value - minValue) / (maxValue - minValue)) //* 1000;
-      console.log(ratio);
+      // console.log(ratio);
       clamped = Math.max(0, Math.min(1, ratio)); // keep between 0 and 1
+    } else {
+      const ratioString = this.scoreTags01(this.points.map(p => p.value.toString()));
+      clamped = ratioString.get(value.toString()) ?? 0;
     }
 
     const r = Math.round(255 * clamped);            // red increases with value
@@ -88,5 +94,39 @@ export class MapViewComponent implements AfterViewInit {
     const b = Math.round(255 * (1 - clamped));      // blue decreases with value
 
     return `rgb(${r},${g},${b})`;
+  }
+
+  scoreTags01(tags: Iterable<string>, options?: { scorer?: (tag: string) => number }): Map<string, number> {
+    const arr = Array.from(new Set(tags)); // ensure uniqueness [1]
+    const m = arr.length;
+
+    // No tags -> empty map
+    if (m === 0) return new Map();
+
+    if (options?.scorer) {
+      // Use custom scorer then min-max normalize to [0,1] [7]
+      const raw = arr.map(t => ({ t, s: options.scorer!(t) }));
+      const sMin = Math.min(...raw.map(r => r.s));
+      const sMax = Math.max(...raw.map(r => r.s));
+      const denom = sMax - sMin;
+      const norm = new Map<string, number>();
+      for (const { t, s } of raw) {
+        const v = denom === 0 ? 1 : (s - sMin) / denom; // if all equal, map to 1 [7]
+        norm.set(t, v);
+      }
+      return norm;
+    }
+
+    // Even spacing across [0,1] using rank
+    // Single element => 1. For >1, first=0, last=1, linear spacing. [15]
+    if (m === 1) {
+      return new Map([[arr[0], 1]]);
+    }
+    const map = new Map<string, number>();
+    for (let i = 0; i < m; i++) {
+      const v = i / (m - 1); // 0 ... 1 inclusive [15]
+      map.set(arr[i], v);
+    }
+    return map;
   }
 }

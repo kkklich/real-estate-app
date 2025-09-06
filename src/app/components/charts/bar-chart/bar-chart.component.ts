@@ -2,10 +2,9 @@
 import { MatCardModule } from '@angular/material/card';
 import { AsyncPipe } from '@angular/common';
 import { BaseChartDirective } from 'ng2-charts';
-import { Component, Input } from '@angular/core';
+import { Component, Input, Signal } from '@angular/core';
 import { ChartData, ChartOptions } from 'chart.js';
-import { CalculateStatisticsService } from '../../../services/calculate-statistics';
-import { map, Observable } from 'rxjs';
+import { Observable } from 'rxjs';
 import { Property } from '../../../models/property';
 
 @Component({
@@ -16,7 +15,8 @@ import { Property } from '../../../models/property';
 })
 export class BarChartComponent {
 
-  @Input() chartData$!: Observable<ChartData<'bar'>>;
+  // @Input() chartData$!: Observable<ChartData<'bar'>>;
+  @Input() chartData!: Signal<ChartData<'bar'>>;
   @Input() chartTitle: string = '';
 
   public properties$!: Observable<Property[]>;
