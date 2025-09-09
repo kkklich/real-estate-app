@@ -1,129 +1,130 @@
 // Ensure the filter container is full width and below the toolbar
 .filter-container {
-  width: 100%;
-  margin: 0;
-  padding: 1rem 2rem 0 2rem;
-  box-sizing: border-box;
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  z-index: 1;
+    width: 100%;
+    margin: 0;
+    padding: 1rem 2rem 0 2rem;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    z-index: 1;
 }
 
 @media (max-width: 600px) {
-  .filter-container {
-    padding: 0.5rem 0.5rem 0 0.5rem;
-    flex-direction: column;
-    align-items: stretch;
-  }
+    .filter-container {
+        padding: 0.5rem 0.5rem 0 0.5rem;
+        flex-direction: column;
+        align-items: stretch;
+    }
 }
 
 .dashboard-container {
-  padding: 32px 16px;
-  max-width: 1380px;
-  margin: 0 auto;
+    padding: 32px 16px;
+    max-width: 1380px;
+    margin: 0 auto;
 }
 
 .dashboard-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  grid-template-rows: auto;
-  gap: 24px;
-  grid-template-areas:
-    "kpi kpi barchart"
-    "scatter pie map"
-    "line line map";
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: auto;
+    gap: 24px;
+    grid-template-areas:
+        "grouped grouped barchart"
+        "scatter pie map"
+        "line line map";
 }
 
-app-kpi-cards {
-  grid-area: kpi;
-  min-width: 0;
-}
 
 app-bar-chart {
-  grid-area: barchart;
-  min-width: 0;
+    grid-area: barchart;
+    min-width: 0;
 }
 
 app-scatter-chart {
-  grid-area: scatter;
-  min-width: 0;
+    grid-area: scatter;
+    min-width: 0;
+}
+
+app-grouped-chart {
+    grid-area: grouped;
+    min-width: 0;
 }
 
 app-pie-chart {
-  grid-area: pie;
-  min-width: 0;
+    grid-area: pie;
+    min-width: 0;
 }
 
 app-map-view {
-  grid-area: map;
-  width: 1000px;
-  height: 1000px;
+    grid-area: map;
+    width: 500px;
+    height: 500px;
 }
 
 app-line-chart {
-  grid-area: line;
-  min-width: 0;
+    grid-area: line;
+    min-width: 0;
 }
 
 mat-card {
-  border-radius: 14px;
-  box-shadow: 0 4px 24px 0 rgba(80, 106, 139, 0.08);
-  border: none;
-  padding: 20px 22px 18px 22px;
+    border-radius: 14px;
+    box-shadow: 0 4px 24px 0 rgba(80, 106, 139, 0.08);
+    border: none;
+    padding: 20px 22px 18px 22px;
 }
 
 .card-title {
-  font-size: 1.17rem;
-  font-weight: 600;
-  color: #22294a;
-  margin-bottom: 18px;
-  letter-spacing: 0.01em;
+    font-size: 1.17rem;
+    font-weight: 600;
+    color: #22294a;
+    margin-bottom: 18px;
+    letter-spacing: 0.01em;
 }
 
 @media (max-width: 1100px) {
-  .dashboard-grid {
-    grid-template-columns: 1fr 1fr;
-    grid-template-areas:
-      "kpi barchart"
-      "scatter pie"
-      "map map"
-      "line line";
-  }
+    .dashboard-grid {
+        grid-template-columns: 1fr 1fr;
+        grid-template-areas:
+            "grouped barchart"
+            "scatter pie"
+            "map map"
+            "line line";
+    }
 }
 
 @media (max-width: 700px) {
-  .dashboard-grid {
-    grid-template-columns: 1fr;
-    grid-template-areas:
-      "kpi"
-      "barchart"
-      "scatter"
-      "pie"
-      "map"
-      "line";
-    gap: 16px;
-  }
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+            "barchart"
+            "grouped"
+            "scatter"
+            "pie"
+            "map"
+            "line";
+        gap: 16px;
+    }
 
-  .dashboard-container {
-    padding: 8px;
-  }
+    .dashboard-container {
+        padding: 8px;
+    }
 }
 
 mat-toolbar {
-  background: #f6fafd;
-  color: #22294a;
-  box-shadow: none;
-  border-bottom: 1px solid #e8eaf4;
+    background: #f6fafd;
+    color: #22294a;
+    box-shadow: none;
+    border-bottom: 1px solid #e8eaf4;
 
-  .logo {
-    font-weight: 700;
-    font-size: 1.55rem;
-    letter-spacing: -0.02em;
-    color: #234392;
-  }
+    .logo {
+        font-weight: 700;
+        font-size: 1.55rem;
+        letter-spacing: -0.02em;
+        color: #234392;
+    }
 
-  .spacer {
-    flex: 1 1 auto;
-  }
+    .spacer {
+        flex: 1 1 auto;
+    }
 }

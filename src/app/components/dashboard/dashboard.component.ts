@@ -6,33 +6,35 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { MapViewComponent } from "../charts/map-view/map-view.component";
 import { BarChartComponent } from "../charts/bar-chart/bar-chart.component";
 import { isPlatformBrowser } from '@angular/common';
+import { GroupedChartComponent } from "../charts/grouped-chart/grouped-chart.component";
 
 @Component({
-  selector: 'app-dashboard',
-  imports: [
-    SearchFilterComponent,
-    MatToolbarModule,
-    MapViewComponent,
-    BarChartComponent
-  ],
-  templateUrl: './dashboard.component.html',
-  styleUrl: './dashboard.component.scss'
+    selector: 'app-dashboard',
+    imports: [
+        SearchFilterComponent,
+        MatToolbarModule,
+        MapViewComponent,
+        BarChartComponent,
+        GroupedChartComponent
+    ],
+    templateUrl: './dashboard.component.html',
+    styleUrl: './dashboard.component.scss'
 })
 export class DashboardComponent {
 
-  isBrowser = false;
-  public barChartDataByBuildingType = computed(() =>
-    this.calculateStatisticsService.barChartDataByBuildingType()
-  );
+    isBrowser = false;
+    public barChartDataByBuildingType = computed(() =>
+        this.calculateStatisticsService.barChartDataByBuildingType()
+    );
 
-  constructor(
-    @Inject(PLATFORM_ID) private readonly platformId: Object,
-    readonly calculateStatisticsService: CalculateStatisticsService
-  ) {
-    this.isBrowser = isPlatformBrowser(this.platformId);
-  }
-  public onGroupByTypeChange(type: string | null) {
-    this.calculateStatisticsService.groupedBy.set(type || 'buildingType');
-  }
+    constructor(
+        @Inject(PLATFORM_ID) private readonly platformId: Object,
+        readonly calculateStatisticsService: CalculateStatisticsService
+    ) {
+        this.isBrowser = isPlatformBrowser(this.platformId);
+    }
+    public onGroupByTypeChange(type: string | null) {
+        this.calculateStatisticsService.groupedBy.set(type || 'buildingType');
+    }
 
 }

@@ -1,4 +1,3 @@
-import { effect, Signal } from "@angular/core";
 import { Injectable, signal, computed } from "@angular/core";
 import { RealEstateDataService } from './real-estate-data.service';
 import { Property, PropertydataAPI } from "../models/property";
@@ -22,17 +21,7 @@ export class CalculateStatisticsService {
         'location.district'
     ];
 
-    constructor(private readonly realEstateService: RealEstateDataService) {
-        this.listenToSignal(this.groupedBy, (newValue) => {
-            this.getDataWithGroupStatistics(newValue);
-        });
-    }
-
-    public listenToSignal<T>(signal: Signal<T>, callback: (value: T) => void): void {
-        effect(() => {
-            callback(signal());
-        });
-    }
+    constructor(private readonly realEstateService: RealEstateDataService) { }
 
     private fetchData() {
         this.realEstateService.getDashboardData().subscribe(data => {
@@ -76,8 +65,10 @@ export class CalculateStatisticsService {
         let labels: string[];
         let counts: number[];
         if (allNumeric) {
-            const pairs = keys
-                .map(key => ({ key, value: groupMap.get(key.toString())! }))
+            let binSize = this.getBinSizeValue(groupedBy);
+            const bins = this.binNumericKeys(keys, groupMap, binSize);
+            const pairs = Array.from(bins.entries())
+                .map(([key, value]) => ({ key, value }))
                 .sort((a, b) => Number(a.key) - Number(b.key));
 
             labels = pairs.map(pair => pair.key.toString());
@@ -86,6 +77,7 @@ export class CalculateStatisticsService {
             labels = keys;
             counts = keys.map(key => groupMap.get(key)!);
         }
+
         return {
             datasets: [
                 { data: counts, label: 'Liczba ofert' }
@@ -94,13 +86,38 @@ export class CalculateStatisticsService {
         };
     });
 
+    private getBinSizeValue(key: string): number {
+        switch (key) {
+            case 'pricePerMeter': return 200;
+            case 'price': return 5000;
+            default: return 1;
+        }
+    }
+
+    binNumericKeys(
+        keys: string[],
+        groupMap: Map<string, number>,
+        binSize: number = 50
+    ): Map<string, number> {
+        const bins: Map<string, number> = new Map();
+        keys.forEach(key => {
+            const num = Number(key);
+            if (isNaN(num)) return;
+            const binEnd = Math.ceil(num / binSize) * binSize;
+            const binLabel = binEnd.toString();
+            bins.set(binLabel, (bins.get(binLabel) || 0) + (groupMap.get(key) || 0));
+        });
+        return bins;
+    }
+
     public getNested(obj: any, path: string): any {
         return path.split('.').reduce((acc, part) => (acc ? acc[part] : undefined), obj);
     }
 
-    public async getDataWithGroupStatistics(groupByProperty: string = 'market'): Promise<Record<any, RealEstateStatistics>> {
-        const response = this.data();
+    public async getDataWithGroupStatistics(): Promise<Record<any, RealEstateStatistics>> {
+        const groupByProperty = this.groupedBy();
         const propertyParts = groupByProperty.split('.');
+        const response = this.data();
 
         const keySelector = (x: Property): any => {
             let value: any = x;
