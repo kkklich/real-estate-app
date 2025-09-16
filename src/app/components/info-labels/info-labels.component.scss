@@ -1,0 +1,26 @@
+.two-labels-container {
+    display: flex;
+    flex-direction: row;
+    gap: 16px;
+    padding: 16px;
+    border-radius: 8px;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+.label {
+    font-size: 16px;
+    font-weight: 500;
+    padding: 8px 12px;
+    border-radius: 4px;
+    background: #e0e7ff;
+    color: #22223b;
+}
+
+.label-one {
+    background: #bde0fe;
+}
+
+.label-two {
+    background: #ffc8dd;
+}
