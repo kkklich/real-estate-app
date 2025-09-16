@@ -27,8 +27,13 @@ export class DashboardComponent {
         this.calculateStatisticsService.barChartDataByBuildingType()
     );
 
-    public barChartData = (parameter: string) =>
-        computed(() => this.calculateStatisticsService.filterByParameter(parameter)());//todo fix it
+    public barChartDataMedianArea = computed(() =>
+        this.calculateStatisticsService.filterByParameter(realEstateStatisticsKey.MedianArea)()
+    );
+
+    public barChartDataMedianPricePerMeter = computed(() =>
+        this.calculateStatisticsService.filterByParameter(realEstateStatisticsKey.MedianPricePerMeter)()
+    );
 
     constructor(
         @Inject(PLATFORM_ID) private readonly platformId: Object,
