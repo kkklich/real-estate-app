@@ -30,16 +30,30 @@
     grid-template-rows: auto;
     gap: 24px;
     grid-template-areas:
-        "grouped grouped barchart"
-        "scatter pie map"
+        "grouped grouped bar-chart-building-type"
+        "bar-chart-median bar-chart-median-area map"
         "line line map";
 }
 
-
-app-bar-chart {
-    grid-area: barchart;
+.bar-chart-median {
+    grid-area: bar-chart-median;
     min-width: 0;
 }
+
+.bar-chart-median-area {
+    grid-area: bar-chart-median-area;
+    min-width: 0;
+}
+
+.bar-chart-building-type {
+    grid-area: bar-chart-building-type;
+    min-width: 0;
+}
+
+// app-bar-chart {
+//     grid-area: barchart;
+//     min-width: 0;
+// }
 
 app-scatter-chart {
     grid-area: scatter;
@@ -86,8 +100,8 @@ mat-card {
     .dashboard-grid {
         grid-template-columns: 1fr 1fr;
         grid-template-areas:
-            "grouped barchart"
-            "scatter pie"
+            "grouped bar-chart-building-type"
+            "bar-chart-median bar-chart-median-area"
             "map map"
             "line line";
     }
@@ -97,10 +111,10 @@ mat-card {
     .dashboard-grid {
         grid-template-columns: 1fr;
         grid-template-areas:
-            "barchart"
+            "bar-chart-building-type"
             "grouped"
-            "scatter"
-            "pie"
+            "bar-chart-median"
+            "bar-chart-median-area"
             "map"
             "line";
         gap: 16px;

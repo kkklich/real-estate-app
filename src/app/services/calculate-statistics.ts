@@ -2,12 +2,13 @@ import { Injectable, signal, computed } from "@angular/core";
 import { RealEstateDataService } from './real-estate-data.service';
 import { Property, PropertydataAPI } from "../models/property";
 import { RealEstateStatistics } from "../models/resultStatistics";
+import { ChartConfiguration } from "chart.js";
 
 @Injectable({ providedIn: 'root' })
 
 export class CalculateStatisticsService {
-    private readonly data = signal<PropertydataAPI>({ totalCount: 0, data: [] });
     private readonly loaded = signal(false);
+    public data = signal<PropertydataAPI>({ totalCount: 0, data: [] });
     public groupedBy = signal<string>('market');
 
     public groupByTypes: string[] = [
@@ -24,7 +25,7 @@ export class CalculateStatisticsService {
     constructor(private readonly realEstateService: RealEstateDataService) { }
 
     private fetchData() {
-        this.realEstateService.getDashboardData().subscribe(data => {
+        this.realEstateService.getDashboardData().subscribe(async data => {
             this.data.set(data);
         });
     }
@@ -78,6 +79,8 @@ export class CalculateStatisticsService {
             counts = keys.map(key => groupMap.get(key)!);
         }
 
+        console.log('QQQdane do wykresu słupkowego', { datasets: [{ data: counts, label: 'Liczba ofert' }], labels });
+
         return {
             datasets: [
                 { data: counts, label: 'Liczba ofert' }
@@ -114,7 +117,7 @@ export class CalculateStatisticsService {
         return path.split('.').reduce((acc, part) => (acc ? acc[part] : undefined), obj);
     }
 
-    public async getDataWithGroupStatistics(): Promise<Record<any, RealEstateStatistics>> {
+    public getDataWithGroupStatistics(): Record<any, RealEstateStatistics> {
         const groupByProperty = this.groupedBy();
         const propertyParts = groupByProperty.split('.');
         const response = this.data();
@@ -229,4 +232,62 @@ export class CalculateStatisticsService {
         if (data.length === 0) return 0;
         return data.reduce((acc, x) => acc + x.floor, 0) / data.length;
     }
+
+    public buildChartData(): ChartConfiguration<'bar'>['data'] {
+        const input = this.getDataWithGroupStatistics();
+        const labels = Array.from(
+            new Set(Object.values(input).flatMap(group => Object.keys(group)))
+        );
+
+        const datasets = Object.entries(input).map(([group, values], idx) => ({
+            label: group,
+            data: labels.map(label => values[label as keyof GroupData]),
+            backgroundColor: this.getColor(idx)
+        }));
+
+        return {
+            labels,
+            datasets
+        };
+    }
+
+    private getColor(idx: number): string {
+        const palette = [
+            'rgba(54, 162, 235, 0.7)',
+            'rgba(255, 99, 132, 0.7)',
+            'rgba(255, 206, 86, 0.7)',
+            'rgba(75, 192, 192, 0.7)',
+            'rgba(153, 102, 255, 0.7)',
+            'rgba(255, 159, 64, 0.7)'
+        ];
+        return palette[idx % palette.length];
+    }
+
+    public filterByParameter = (parameter: string) =>
+        computed(() => {
+            console.log('filterByParameter', parameter);
+            const datasets = this.buildChartData();
+            if (!datasets?.labels) {
+                return { datasets: [], labels: [] };
+            }
+            const index = datasets.labels.indexOf(parameter);
+            if (index === -1) {
+                throw new Error(`Parameter "${parameter}" not found in labels`);
+            }
+
+            const newDatasets = datasets.datasets.map(ds => ({
+                ...ds,
+                data: [ds.data[index]],
+            }));
+
+            const datas = newDatasets.flatMap(ds => ds.data);
+            const labels = newDatasets.map(ds => ds.label);
+
+            return {
+                datasets: [
+                    { data: datas, label: 'Liczba ofert' }
+                ],
+                labels
+            };
+        });
 }

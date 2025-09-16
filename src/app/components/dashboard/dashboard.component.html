@@ -16,8 +16,12 @@
     <app-pie-chart></app-pie-chart>
     <app-map-view></app-map-view>
     <app-line-chart></app-line-chart> -->
-        <app-grouped-chart></app-grouped-chart>
-        <app-bar-chart [chartData]="barChartDataByBuildingType"
+        <!-- <app-grouped-chart></app-grouped-chart> -->
+        <app-bar-chart class="bar-chart-median-area" [chartData]="barChartData(realEstateStatisticsKey.MedianArea)"
+            [chartTitle]="'Wykres mediana powierzchni'"></app-bar-chart>
+        <app-bar-chart class="bar-chart-median" [chartData]="barChartData(realEstateStatisticsKey.MedianPricePerMeter)"
+            [chartTitle]="'Wykres mediana ceny za metr'"></app-bar-chart>
+        <app-bar-chart class="bar-chart-building-type" [chartData]="barChartDataByBuildingType"
             [chartTitle]="calculateStatisticsService.groupedBy()"></app-bar-chart>
         <app-map-view class="map-view"></app-map-view>
     </div>
