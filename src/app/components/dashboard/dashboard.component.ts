@@ -7,6 +7,7 @@ import { MapViewComponent } from "../charts/map-view/map-view.component";
 import { BarChartComponent } from "../charts/bar-chart/bar-chart.component";
 import { isPlatformBrowser } from '@angular/common';
 import { realEstateStatisticsKey } from '../../models/enums/statisticsParameter.enum';
+import { InfoLabels } from "../info-labels/info-labels.component";
 
 @Component({
     selector: 'app-dashboard',
@@ -14,7 +15,8 @@ import { realEstateStatisticsKey } from '../../models/enums/statisticsParameter.
         SearchFilterComponent,
         MatToolbarModule,
         MapViewComponent,
-        BarChartComponent
+        BarChartComponent,
+        InfoLabels
     ],
     templateUrl: './dashboard.component.html',
     styleUrl: './dashboard.component.scss'

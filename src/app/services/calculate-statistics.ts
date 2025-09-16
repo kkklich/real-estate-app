@@ -176,11 +176,22 @@ export class CalculateStatisticsService {
         if (data.length === 0) return 0;
         return data.reduce((acc, x) => acc + x.price, 0) / data.length;
     }
+    public getPriceText(): string {
+        const data = this.data();
+        const price = this.calculateAveragePrice(data.data);
+        return `Średnia cena : ${price.toFixed(2)} PLN`;
+    };
 
     private calculateAveragePricePerMeter(data: Property[]): number {
         if (data.length === 0) return 0;
         return data.reduce((acc, x) => acc + x.pricePerMeter, 0) / data.length;
     }
+
+    public getInfoText(): string {
+        const data = this.data();
+        const pricePerMeter = this.calculateAveragePricePerMeter(data.data);
+        return `Średnia cena za metr: ${pricePerMeter.toFixed(2)} PLN`;
+    };
 
     private calculateMedianPrice(data: Property[]): number {
         const sortedPrices = data.map(x => x.price).sort((a, b) => a - b);
