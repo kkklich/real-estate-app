@@ -177,8 +177,14 @@ export class CalculateStatisticsService {
     public getPriceText(): string {
         const data = this.data();
         const price = this.calculateAveragePrice(data.data);
-        return `Średnia cena : ${price.toFixed(2)} PLN`;
+        return `Średnia cena : ${this.convertNumberPrice(price)} PLN`;
     };
+
+    private convertNumberPrice(price: number): string {
+        return price
+            .toFixed(2)
+            .replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+    }
 
     private calculateAveragePricePerMeter(data: Property[]): number {
         if (data.length === 0) return 0;
@@ -188,7 +194,7 @@ export class CalculateStatisticsService {
     public getInfoText(): string {
         const data = this.data();
         const pricePerMeter = this.calculateAveragePricePerMeter(data.data);
-        return `Średnia cena za metr: ${pricePerMeter.toFixed(2)} PLN`;
+        return `Średnia cena za metr: ${this.convertNumberPrice(pricePerMeter)} PLN`;
     };
 
     private calculateMedianPricePerMeter(data: Property[]): number {
