@@ -1,4 +1,4 @@
-import { Component, effect } from '@angular/core';
+import { ChangeDetectorRef, Component, effect } from '@angular/core';
 import { CalculateStatisticsService } from '../../services/calculate-statistics';
 
 @Component({
@@ -12,10 +12,12 @@ export class InfoLabels {
     public averagePriceMeter: string = '';
     public averagePrice: string = '';
 
-    constructor(private readonly calculateStatisticsService: CalculateStatisticsService) {
+    constructor(readonly calculateStatisticsService: CalculateStatisticsService, readonly cdr: ChangeDetectorRef) {
         effect(() => {
-            this.averagePriceMeter = this.calculateStatisticsService.getInfoText();
-            this.averagePrice = this.calculateStatisticsService.getPriceText();
+            void this.calculateStatisticsService.data();
+            this.averagePriceMeter = calculateStatisticsService.getInfoText();
+            this.averagePrice = calculateStatisticsService.getPriceText();
+            cdr.detectChanges();
         });
     }
 }

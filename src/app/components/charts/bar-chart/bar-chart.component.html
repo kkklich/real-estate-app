@@ -1,5 +1,5 @@
 <mat-card>
-    @if (chartData()) {
+    @if (chartData().datasets.length > 0) {
     <div class="card-title">{{chartTitle}}</div>
     <div>
         <canvas baseChart [data]="chartData()" [labels]="barChartLabels" [type]="barChartType"

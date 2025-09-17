@@ -15,22 +15,14 @@ export class GroupedChartComponent {
 
     constructor(private readonly calculateStatisticsService: CalculateStatisticsService) {
         effect(() => {
-            // Listen only to changes in groupedBy signal
             void this.calculateStatisticsService.groupedBy();
             this.loadChartData();
         });
-
-        //public groupedBy = signal<string>('market'); please listen to changes from the calculateStatisticsService
-        // this.calculateStatisticsService.groupedBy().subscribe(() => {
-        //     this.loadChartData();
-        // });
     }
 
     private async loadChartData() {
         const data = await this.calculateStatisticsService.getDataWithGroupStatistics();
-        // const chartData = this.generateGroupedChartData(data);
         this.barChartData = this.buildChartData(data);
-        // console.log('wykres grupowany', this.barChartData);
         return this.barChartData;
     }
     public barChartOptions: ChartConfiguration<'bar'>['options'] = {
@@ -50,7 +42,6 @@ export class GroupedChartComponent {
     public barChartData: ChartConfiguration<'bar'>['data'] = { labels: [], datasets: [] };
 
     buildChartData(input: Record<any, GroupData>): ChartConfiguration<'bar'>['data'] {
-        // const labels = ['averageFloor', 'count', 'medianArea', 'medianPrice', 'medianPricePerMeter'];
         const labels = Array.from(
             new Set(Object.values(input).flatMap(group => Object.keys(group)))
         );

@@ -79,8 +79,6 @@ export class CalculateStatisticsService {
             counts = keys.map(key => groupMap.get(key)!);
         }
 
-        console.log('QQQdane do wykresu słupkowego', { datasets: [{ data: counts, label: 'Liczba ofert' }], labels });
-
         return {
             datasets: [
                 { data: counts, label: 'Liczba ofert' }
@@ -193,19 +191,6 @@ export class CalculateStatisticsService {
         return `Średnia cena za metr: ${pricePerMeter.toFixed(2)} PLN`;
     };
 
-    private calculateMedianPrice(data: Property[]): number {
-        const sortedPrices = data.map(x => x.price).sort((a, b) => a - b);
-        const count = sortedPrices.length;
-
-        if (count === 0) return 0;
-
-        if (count % 2 === 1) {
-            return sortedPrices[Math.floor(count / 2)];
-        } else {
-            return (sortedPrices[count / 2 - 1] + sortedPrices[count / 2]) / 2.0;
-        }
-    }
-
     private calculateMedianPricePerMeter(data: Property[]): number {
         const sortedPrices = data.map(x => x.pricePerMeter).sort((a, b) => a - b);
         const count = sortedPrices.length;
@@ -217,13 +202,6 @@ export class CalculateStatisticsService {
         } else {
             return (sortedPrices[count / 2 - 1] + sortedPrices[count / 2]) / 2.0;
         }
-    }
-
-    private calculatePriceStandardDeviation(data: Property[]): number {
-        if (data.length === 0) return 0;
-        const avg = this.calculateAveragePrice(data);
-        const sumSquares = data.reduce((acc, x) => acc + Math.pow(x.price - avg, 2), 0);
-        return Math.sqrt(sumSquares / data.length);
     }
 
     private calculateMedianArea(data: Property[]): number {
@@ -262,7 +240,7 @@ export class CalculateStatisticsService {
         };
     }
 
-    private getColor(idx: number): string {
+    private getColor(idx: number): string {//TODO get only one part of color synchronize
         const palette = [
             'rgba(54, 162, 235, 0.7)',
             'rgba(255, 99, 132, 0.7)',
@@ -276,14 +254,13 @@ export class CalculateStatisticsService {
 
     public filterByParameter = (parameter: string) =>
         computed(() => {
-            console.log('filterByParameter', parameter);
             const datasets = this.buildChartData();
             if (!datasets?.labels) {
                 return { datasets: [], labels: [] };
             }
             const index = datasets.labels.indexOf(parameter);
             if (index === -1) {
-                throw new Error(`Parameter "${parameter}" not found in labels`);
+                return { datasets: [], labels: [] };
             }
 
             const newDatasets = datasets.datasets.map(ds => ({
