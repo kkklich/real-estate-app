@@ -1,10 +1,15 @@
 <mat-card>
+    @if (chartData()) {
     <div class="card-title">{{chartTitle}}</div>
     <div>
-        @if (chartData()) {
         <canvas baseChart [data]="chartData()" [labels]="barChartLabels" [type]="barChartType"
             [options]="barChartOptions" height="220">
         </canvas>
-        }
+
     </div>
+    }@else {
+    <div class="chart-loader">
+        <span>Ładowanie wykresu...</span>
+    </div>
+    }
 </mat-card>
