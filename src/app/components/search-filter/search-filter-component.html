@@ -1,12 +1,10 @@
-<div class="search-filter-container">
-    <mat-form-field appearance="fill" class="grouping-select">
-        <mat-label>Grupowanie</mat-label>
-        <mat-select (selectionChange)="onGroupByTypeChange($event.value)">
-            @for (type of calculateStatisticsService.groupByTypes; track type) {
-            <mat-option [value]="type">
-                {{ type }}
-            </mat-option>
-            }
-        </mat-select>
-    </mat-form-field>
-</div>
+<mat-form-field appearance="fill">
+    <mat-label>Select a string</mat-label>
+    <mat-select class="select" panelClass="select-panel" (selectionChange)="onGroupByTypeChange($event.value)">
+        @for (type of calculateStatisticsService.groupByTypes; track type) {
+        <mat-option [value]="type">
+            {{ type }}
+        </mat-option>
+        }
+    </mat-select>
+</mat-form-field>
