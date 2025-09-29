@@ -8,6 +8,7 @@ import { BarChartComponent } from "../charts/bar-chart/bar-chart.component";
 import { isPlatformBrowser } from '@angular/common';
 import { realEstateStatisticsKey } from '../../models/enums/statisticsParameter.enum';
 import { InfoLabels } from "../info-labels/info-labels.component";
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 @Component({
     selector: 'app-dashboard',
@@ -16,7 +17,8 @@ import { InfoLabels } from "../info-labels/info-labels.component";
         MatToolbarModule,
         MapViewComponent,
         BarChartComponent,
-        InfoLabels
+        InfoLabels,
+        MatProgressSpinnerModule
     ],
     templateUrl: './dashboard.component.html',
     styleUrl: './dashboard.component.scss'
@@ -25,6 +27,10 @@ export class DashboardComponent {
 
     isBrowser = false;
     public realEstateStatisticsKey = realEstateStatisticsKey;
+    public isDataLoaded = computed(() =>
+        this.calculateStatisticsService.data().data.length > 0
+    );
+
     public barChartDataByBuildingType = computed(() =>
         this.calculateStatisticsService.barChartDataByBuildingType()
     );

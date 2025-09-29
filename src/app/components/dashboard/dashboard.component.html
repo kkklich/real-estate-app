@@ -2,6 +2,7 @@
     <span class="logo">Real Estate Dashboard</span>
     <span class="spacer"></span>
 </mat-toolbar>
+@if(calculateStatisticsService.hasData()){
 <div class="filter-container">
     <app-search-filter (groupByTypeChange)="onGroupByTypeChange($event)"></app-search-filter>
 </div>
@@ -24,3 +25,9 @@
     </div>
     }
 </div>
+}@else {
+<div class="loading-container">
+    <span>Loading data...</span>
+    <mat-spinner></mat-spinner>
+</div>
+}

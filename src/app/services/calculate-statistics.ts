@@ -7,9 +7,9 @@ import { ChartConfiguration } from "chart.js";
 @Injectable({ providedIn: 'root' })
 
 export class CalculateStatisticsService {
-    private readonly loaded = signal(false);
     public data = signal<PropertydataAPI>({ totalCount: 0, data: [] });
     public groupedBy = signal<string>('market');
+    public hasData = computed(() => (this.data().data?.length ?? 0) > 0);
 
     public groupByTypes: string[] = [
         'price',
@@ -22,7 +22,9 @@ export class CalculateStatisticsService {
         'location.district'
     ];
 
-    constructor(private readonly realEstateService: RealEstateDataService) { }
+    constructor(private readonly realEstateService: RealEstateDataService) {
+        this.getData();
+    }
 
     private fetchData() {
         this.realEstateService.getDashboardData().subscribe(async data => {
@@ -31,8 +33,7 @@ export class CalculateStatisticsService {
     }
 
     getData() {
-        if (!this.loaded()) {
-            this.loaded.set(true);
+        if (!this.hasData()) {
             this.fetchData();
         }
         return this.data;
