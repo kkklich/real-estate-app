@@ -6,29 +6,25 @@ import { MatSelectModule } from '@angular/material/select';
 import { CalculateStatisticsService } from '../../services/calculate-statistics';
 
 @Component({
-  selector: 'app-search-filter',
+    selector: 'app-search-filter',
 
-  imports: [
-    MatFormFieldModule,
-    MatInputModule,
-    MatSelectModule,
-    FormsModule
-  ],
-  templateUrl: './search-filter-component.html',
-  styleUrl: './search-filter-component.scss'
+    imports: [
+        MatFormFieldModule,
+        MatInputModule,
+        MatSelectModule,
+        FormsModule
+    ],
+    templateUrl: './search-filter-component.html',
+    styleUrl: './search-filter-component.scss'
 })
 export class SearchFilterComponent {
 
-  @Output() groupByTypeChange = new EventEmitter<string | null>();
-  public selectedType: string | null = null;
+    @Output() groupByTypeChange = new EventEmitter<string | null>();
+    public selectedType: string | null = null;
 
-  // get groupByType(): string {
-  //   return this.calculateStatisticsService.groupedBy;
-  // }
+    constructor(readonly calculateStatisticsService: CalculateStatisticsService) { }
 
-  constructor(readonly calculateStatisticsService: CalculateStatisticsService) { }
-
-  public onGroupByTypeChange(value: string | null) {
-    this.groupByTypeChange.emit(value);
-  }
+    public onGroupByTypeChange(value: string | null) {
+        this.groupByTypeChange.emit(value);
+    }
 }
