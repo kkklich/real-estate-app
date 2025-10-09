@@ -20,13 +20,19 @@ export class MapViewComponent implements AfterViewInit {
         this.data$ = this.calculateStatisticsService.getData();
     }
 
+    private readonly resetOnGroupChange = effect(() => {
+        const groupedBy = this.calculateStatisticsService.groupedBy(); // tracked
+        this.points = []; // clear immediately when groupedBy changes
+    });
+
     private readonly pointsEffect = effect(() => {
+        const groupedBy = this.calculateStatisticsService.groupedBy();
         if (!this.viewReady() || this.points.length > 0)
             return;
         const data = this.data$();// read the signal
         const items = data?.data ?? [];
 
-        const groupedBy = this.calculateStatisticsService.groupedBy(); // call if it's a signal/method
+        // call if it's a signal/method
         this.points = items
             .map(item => {
                 const value = this.calculateStatisticsService.getNested(item, groupedBy);
