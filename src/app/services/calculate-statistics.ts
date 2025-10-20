@@ -1,12 +1,13 @@
-import { Injectable, signal, computed } from "@angular/core";
+import { Injectable, signal, computed, OnDestroy, Inject, PLATFORM_ID } from "@angular/core";
 import { RealEstateDataService } from './real-estate-data.service';
 import { Property, PropertydataAPI } from "../models/property";
 import { RealEstateStatistics } from "../models/resultStatistics";
 import { ChartConfiguration } from "chart.js";
+import { isPlatformBrowser } from "@angular/common";
 
 @Injectable({ providedIn: 'root' })
 
-export class CalculateStatisticsService {
+export class CalculateStatisticsService implements OnDestroy {
     public data = signal<PropertydataAPI>({ totalCount: 0, data: [] });
     public groupedBy = signal<string>('market');
     public hasData = computed(() => (this.data().data?.length ?? 0) > 0);
@@ -21,10 +22,35 @@ export class CalculateStatisticsService {
         'private',
         'location.district'
     ];
+    private intervalId?: number;
 
-    constructor(private readonly realEstateService: RealEstateDataService) {
-        this.getData();
+    constructor(@Inject(PLATFORM_ID) platformId: Object, private readonly realEstateService: RealEstateDataService) {
+        const isBrowser = isPlatformBrowser(platformId);
+        if (isBrowser) {
+            this.startWeeklyJob(() => this.getData(), 23);
+        }
     }
+
+    private startWeeklyJob(task: () => void, targetHour: number): void {
+        const checkIntervalMs = 60 * 60 * 1000; // check every minute
+
+        this.intervalId = window.setInterval(() => {
+            const now = new Date();
+
+            // Sunday is day 0 in JS (0=Sunday, 1=Monday, ...)
+            const isSunday = now.getDay() === 0;
+            const isTargetTime = now.getHours() === targetHour;
+
+            if (isSunday && isTargetTime) {
+                task();
+            }
+        }, checkIntervalMs);
+    }
+
+    ngOnDestroy(): void {
+        if (this.intervalId) clearInterval(this.intervalId);
+    }
+
 
     private fetchData() {
         this.realEstateService.getDashboardData().subscribe(async data => {
