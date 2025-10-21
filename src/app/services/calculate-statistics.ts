@@ -23,11 +23,14 @@ export class CalculateStatisticsService implements OnDestroy {
         'location.district'
     ];
     private intervalId?: number;
+    private lastFetched?: number;       // timestamp of last successful fetch (ms)
+    private fetching = false;
 
     constructor(@Inject(PLATFORM_ID) platformId: Object, private readonly realEstateService: RealEstateDataService) {
+        this.getData();
         const isBrowser = isPlatformBrowser(platformId);
         if (isBrowser) {
-            this.startWeeklyJob(() => this.getData(), 23);
+            this.startWeeklyJob(() => this.fetchData(), 23);
         }
     }
 
@@ -51,17 +54,31 @@ export class CalculateStatisticsService implements OnDestroy {
         if (this.intervalId) clearInterval(this.intervalId);
     }
 
-
     private fetchData() {
-        this.realEstateService.getDashboardData().subscribe(async data => {
-            this.data.set(data);
+        if (this.fetching) return;
+        this.fetching = true;
+        this.realEstateService.getDashboardData().subscribe({
+            next: (data) => {
+                this.data.set(data);
+                this.lastFetched = Date.now(); // store fetch time
+                this.fetching = false;
+            },
+            error: () => {
+                this.fetching = false;
+            }
         });
     }
 
     getData() {
-        if (!this.hasData()) {
+        const ONE_DAY = 24 * 60 * 60 * 1000;
+        const now = Date.now();
+        const isFresh = this.lastFetched !== undefined && (now - this.lastFetched) < ONE_DAY;
+
+        // If we have no data or data is stale (>1 day) -> fetch
+        if (!isFresh || !this.hasData()) {
             this.fetchData();
         }
+
         return this.data;
     }
 
