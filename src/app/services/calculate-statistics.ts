@@ -3,7 +3,6 @@ import { RealEstateDataService } from './real-estate-data.service';
 import { Property, PropertydataAPI } from "../models/property";
 import { RealEstateStatistics } from "../models/resultStatistics";
 import { ChartConfiguration } from "chart.js";
-import { isPlatformBrowser } from "@angular/common";
 
 @Injectable({ providedIn: 'root' })
 
@@ -28,26 +27,6 @@ export class CalculateStatisticsService implements OnDestroy {
 
     constructor(@Inject(PLATFORM_ID) platformId: Object, private readonly realEstateService: RealEstateDataService) {
         this.getData();
-        const isBrowser = isPlatformBrowser(platformId);
-        if (isBrowser) {
-            this.startWeeklyJob(() => this.fetchData(), 23);
-        }
-    }
-
-    private startWeeklyJob(task: () => void, targetHour: number): void {
-        const checkIntervalMs = 60 * 60 * 1000; // check every minute
-
-        this.intervalId = window.setInterval(() => {
-            const now = new Date();
-
-            // Sunday is day 0 in JS (0=Sunday, 1=Monday, ...)
-            const isSunday = now.getDay() === 0;
-            const isTargetTime = now.getHours() === targetHour;
-
-            if (isSunday && isTargetTime) {
-                task();
-            }
-        }, checkIntervalMs);
     }
 
     ngOnDestroy(): void {

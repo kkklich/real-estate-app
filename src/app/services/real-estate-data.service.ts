@@ -13,4 +13,7 @@ export class RealEstateDataService {
     getDashboardData(): Observable<PropertydataAPI> {
         return this.http.get<PropertydataAPI>(`${this.apiUrl}/getRealEstate`);
     }
+    loadDataMarkeplaces(): Observable<PropertydataAPI> {
+        return this.http.get<PropertydataAPI>(`${this.apiUrl}/loadDataMarkeplaces`);
+    }
 }

@@ -2,6 +2,7 @@ import { AfterViewInit, Component, effect, signal, Signal, untracked } from '@an
 import * as maplibregl from 'maplibre-gl';
 import { CalculateStatisticsService } from '../../../services/calculate-statistics';
 import { PropertydataAPI } from '../../../models/property';
+import * as GeoJSON from 'geojson';
 
 @Component({
     selector: 'app-map-view',
@@ -14,7 +15,7 @@ export class MapViewComponent implements AfterViewInit {
     data$!: Signal<PropertydataAPI>;
 
     private readonly viewReady = signal(false);
-    private points: Array<{ lat: number, lng: number, label: string, value: number }> = [];
+    private points: Array<{ lat: number, lng: number, label: string, value: number, url: string }> = [];
 
     constructor(readonly calculateStatisticsService: CalculateStatisticsService) {
         this.data$ = this.calculateStatisticsService.getData();
@@ -43,7 +44,8 @@ export class MapViewComponent implements AfterViewInit {
                     lat,
                     lng,
                     label: item?.title ?? 'Unknown',
-                    value
+                    value,
+                    url: item?.url ?? ''
                 }
             })
             .filter(p =>
@@ -57,7 +59,8 @@ export class MapViewComponent implements AfterViewInit {
                 lat: p.lat as number,
                 lng: p.lng as number,
                 label: p.label,
-                value: p.value
+                value: p.value,
+                url: p.url
             }));
 
         if (this.viewReady() && this.points.length) {
@@ -71,27 +74,108 @@ export class MapViewComponent implements AfterViewInit {
 
     private generatemap(): void {
         if (!this.points.length) return;
+
         const map = new maplibregl.Map({
             container: 'map',
             style: `https://api.maptiler.com/maps/hybrid/style.json?key=fE7HmfEfHzBPNM7hOEzA`,
-            center: [this.points[0].lng, this.points[0].lat], // starting position [lng, lat]
+            center: [this.points[0].lng, this.points[0].lat],
             zoom: 10
         });
+
         map.addControl(new maplibregl.NavigationControl(), 'top-right');
 
-        this.points.forEach(p => {
-            const color = this.getColorGradient(p.value); // decide color
+        map.on('load', () => {
+            // Convert points to GeoJSON
+            const geojson: GeoJSON.FeatureCollection = {
+                type: 'FeatureCollection',
+                features: this.points.map(p => ({
+                    type: 'Feature',
+                    geometry: { type: 'Point', coordinates: [p.lng, p.lat] },
+                    properties: {
+                        label: p.label,
+                        value: p.value,
+                        color: this.getColorGradient(p.value),
+                        url: p.url
+                    }
+                }))
+            };
 
-            new maplibregl.Marker({ color })
-                .setLngLat([p.lng, p.lat])
-                .setPopup(new maplibregl.Popup().setText(`${p.label}  \n(value: ${p.value})`))
-                .addTo(map);
+            // Add source and layers INSIDE 'load' event
+            map.addSource('properties', {
+                type: 'geojson',
+                data: geojson,
+                cluster: true,
+                clusterMaxZoom: 14,
+                clusterRadius: 50
+            });
+
+            // All your layers and event handlers go here (clusters, cluster-count, unclustered-point)
+            map.addLayer({
+                id: 'clusters',
+                type: 'circle',
+                source: 'properties',
+                filter: ['has', 'point_count'],
+                paint: {
+                    'circle-color': [
+                        'step', ['get', 'point_count'],
+                        '#51bbd6', 100, '#f1f075', 750, '#f28cb1'
+                    ],
+                    'circle-radius': [
+                        'step', ['get', 'point_count'],
+                        20, 100, 30, 750, 40
+                    ]
+                }
+            });
+
+            // Add cluster count labels
+            map.addLayer({
+                id: 'cluster-count',
+                type: 'symbol',
+                source: 'properties',
+                filter: ['has', 'point_count'],
+                layout: {
+                    'text-field': '{point_count_abbreviated}',
+                    'text-font': ['DIN Offc Pro Medium', 'Arial Unicode MS Bold'],
+                    'text-size': 12
+                }
+            });
+
+            // Add non-clustered point layer (individual markers)
+            map.addLayer({
+                id: 'unclustered-point',
+                type: 'circle',
+                source: 'properties',
+                filter: ['!', ['has', 'point_count']],
+                paint: {
+                    'circle-color': ['get', 'color'],
+                    'circle-radius': 8,
+                    'circle-stroke-width': 1,
+                    'circle-stroke-color': '#fff'
+                }
+            });
+
+            map.on('click', 'unclustered-point', (e) => {
+                const feature = e.features![0];
+                const props = feature.properties as any;
+
+                const urlHtml = props.url ? `<br><a href="${props.url}" target="_blank" rel="noopener noreferrer">${props.url}</a>` : '';
+
+                const htmlContent = `<strong>${props.label}</strong><br>
+                         ${this.calculateStatisticsService.groupedBy().toString()}: ${props.value}
+                                ${urlHtml}
+                                    `;
+
+                new maplibregl.Popup()
+                    .setLngLat(e.lngLat)
+                    .setHTML(htmlContent)
+                    .addTo(map);
+            });
+
+            // Fit bounds after layers render
+            const bounds = new maplibregl.LngLatBounds();
+            this.points.forEach(p => bounds.extend([p.lng, p.lat]));
+            map.fitBounds(bounds, { padding: 50 });
         });
-
-        // 🔹 Fit map to all points
-        const bounds = new maplibregl.LngLatBounds();
-        this.points.forEach(p => bounds.extend([p.lng, p.lat]));
-        map.fitBounds(bounds, { padding: 50 });
     }
 
     private getColorGradient(value: any): string {
