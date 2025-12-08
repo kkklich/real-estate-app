@@ -1,4 +1,4 @@
-import { Component, effect, Inject, OnInit, PLATFORM_ID } from '@angular/core';
+import { Component, Inject, OnInit, PLATFORM_ID } from '@angular/core';
 import { CalculateStatisticsService } from '../../services/calculate-statistics';
 import { computed } from '@angular/core';
 import { SearchFilterComponent } from "../search-filter/search-filter-component";
@@ -9,6 +9,9 @@ import { isPlatformBrowser } from '@angular/common';
 import { realEstateStatisticsKey } from '../../models/enums/statisticsParameter.enum';
 import { InfoLabels } from "../info-labels/info-labels.component";
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { LineChartComponent } from "../charts/line-chart/line-chart.component";
+import { RealEstateDataService } from '../../services/real-estate-data.service';
+import { cityEnum } from '../../models/enums/city.enum';
 
 @Component({
     selector: 'app-dashboard',
@@ -18,15 +21,18 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
         MapViewComponent,
         BarChartComponent,
         InfoLabels,
-        MatProgressSpinnerModule
+        MatProgressSpinnerModule,
+        LineChartComponent
     ],
     templateUrl: './dashboard.component.html',
     styleUrl: './dashboard.component.scss'
 })
-export class DashboardComponent {
+export class DashboardComponent implements OnInit {
 
     isBrowser = false;
     public realEstateStatisticsKey = realEstateStatisticsKey;
+    protected labels: string[] = [];
+    protected dataPoints: number[] = [];
     public isDataLoaded = computed(() =>
         this.calculateStatisticsService.data().data.length > 0
     );
@@ -45,12 +51,34 @@ export class DashboardComponent {
 
     constructor(
         @Inject(PLATFORM_ID) private readonly platformId: Object,
-        readonly calculateStatisticsService: CalculateStatisticsService
+        readonly calculateStatisticsService: CalculateStatisticsService,
+        private readonly realEstateService: RealEstateDataService
     ) {
         this.isBrowser = isPlatformBrowser(this.platformId)
     }
 
+    ngOnInit(): void {
+        this.getTimelineData();
+    }
+
     public onGroupByTypeChange(type: string | null) {
         this.calculateStatisticsService.groupedBy.set(type || 'buildingType');
+    }
+
+    public onCityChange(city: cityEnum) {
+        if (city) {
+            this.calculateStatisticsService.city.set(city);
+            this.getTimelineData();
+        }
+    }
+    private getTimelineData(): void {
+        const city = this.calculateStatisticsService.city();
+
+        this.realEstateService.getTimeLinePrice(city).subscribe({
+            next: (data) => {
+                this.labels = data.map(item => item.addedDate.toString());
+                this.dataPoints = data.map(item => item.avgPricePerMeter);
+            }
+        });
     }
 }

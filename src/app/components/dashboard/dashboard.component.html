@@ -4,17 +4,18 @@
 </mat-toolbar>
 @if(calculateStatisticsService.hasData()){
 <div class="filter-container">
-    <app-search-filter (groupByTypeChange)="onGroupByTypeChange($event)"></app-search-filter>
+    <app-search-filter (groupByTypeChange)="onGroupByTypeChange($event)"
+        (cityChange)="onCityChange($event)"></app-search-filter>
 </div>
 
 
 <div class="dashboard-container">
     @if(this.isBrowser){
     <div class="dashboard-grid">
+        <app-line-chart class="line-chart" [labels]="labels" [dataPoints]="dataPoints"
+            chartTitle="Timeline Average Prices"></app-line-chart>
 
         <app-info-labels class="info-labels"></app-info-labels>
-        <app-bar-chart class="bar-chart-median-area" [chartData]="barChartDataMedianArea"
-            [chartTitle]="'Wykres mediana powierzchni'"></app-bar-chart>
 
         <app-bar-chart class="bar-chart-median" [chartData]="barChartDataMedianPricePerMeter"
             [chartTitle]="'Wykres mediana ceny za metr'"></app-bar-chart>

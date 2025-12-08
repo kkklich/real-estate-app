@@ -4,6 +4,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { CalculateStatisticsService } from '../../services/calculate-statistics';
+import { cityEnum } from '../../models/enums/city.enum';
 
 @Component({
     selector: 'app-search-filter',
@@ -20,11 +21,15 @@ import { CalculateStatisticsService } from '../../services/calculate-statistics'
 export class SearchFilterComponent {
 
     @Output() groupByTypeChange = new EventEmitter<string | null>();
-    public selectedType: string | null = null;
+    @Output() cityChange = new EventEmitter<cityEnum>();
+    cityList = Object.values(cityEnum);
 
-    constructor(readonly calculateStatisticsService: CalculateStatisticsService) { }
+    constructor(public readonly calculateStatisticsService: CalculateStatisticsService) {   }
 
     public onGroupByTypeChange(value: string | null) {
         this.groupByTypeChange.emit(value);
+    }
+    public onCityChange(value: cityEnum) {
+        this.cityChange.emit(value);
     }
 }

@@ -44,18 +44,13 @@
     grid-template-rows: auto;
     gap: 24px;
     grid-template-areas:
-        "info-labels info-labels bar-chart-building-type"
-        "bar-chart-median bar-chart-median-area map"
+        "line-chart line-chart info-labels"
+        "bar-chart-median bar-chart-building-type map"
         "line line map";
 }
 
 .bar-chart-median {
     grid-area: bar-chart-median;
-    min-width: 0;
-}
-
-.bar-chart-median-area {
-    grid-area: bar-chart-median-area;
     min-width: 0;
 }
 
@@ -66,6 +61,11 @@
 
 .info-labels {
     grid-area: info-labels;
+    min-width: 0;
+}
+
+.line-chart {
+    grid-area: line-chart;
     min-width: 0;
 }
 
@@ -114,8 +114,8 @@ mat-card {
     .dashboard-grid {
         grid-template-columns: 1fr 1fr;
         grid-template-areas:
-            "info-labels bar-chart-building-type"
-            "bar-chart-median bar-chart-median-area"
+            "line-chart info-labels"
+            "bar-chart-median bar-chart-building-type"
             "map map"
             "line line";
     }
@@ -125,10 +125,10 @@ mat-card {
     .dashboard-grid {
         grid-template-columns: 1fr;
         grid-template-areas:
+            "line-chart"
             "info-labels"
-            "bar-chart-building-type"
             "bar-chart-median"
-            "bar-chart-median-area"
+            "bar-chart-building-type"
             "map"
             "line";
         gap: 16px;

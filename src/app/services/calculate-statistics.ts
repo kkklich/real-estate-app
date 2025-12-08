@@ -1,14 +1,17 @@
-import { Injectable, signal, computed, OnDestroy, Inject, PLATFORM_ID } from "@angular/core";
+import { Injectable, signal, computed, OnDestroy, Inject, PLATFORM_ID, effect, NgZone, untracked } from "@angular/core";
 import { RealEstateDataService } from './real-estate-data.service';
 import { Property, PropertydataAPI } from "../models/property";
 import { RealEstateStatistics } from "../models/resultStatistics";
 import { ChartConfiguration } from "chart.js";
+import { copyFile } from "fs";
+import { cityEnum } from "../models/enums/city.enum";
 
 @Injectable({ providedIn: 'root' })
 
 export class CalculateStatisticsService implements OnDestroy {
     public data = signal<PropertydataAPI>({ totalCount: 0, data: [] });
     public groupedBy = signal<string>('market');
+    public city = signal<cityEnum>(cityEnum.Krakow);
     public hasData = computed(() => (this.data().data?.length ?? 0) > 0);
 
     public groupByTypes: string[] = [
@@ -25,20 +28,26 @@ export class CalculateStatisticsService implements OnDestroy {
     private lastFetched?: number;       // timestamp of last successful fetch (ms)
     private fetching = false;
 
-    constructor(@Inject(PLATFORM_ID) platformId: Object, private readonly realEstateService: RealEstateDataService) {
-        this.getData();
+    constructor(private readonly realEstateService: RealEstateDataService,
+               private readonly ngZone: NgZone
+  ) {
+        // this.getData();
+
+        this.setupSignalListener();
     }
 
     ngOnDestroy(): void {
         if (this.intervalId) clearInterval(this.intervalId);
     }
 
-    private fetchData() {
+    private fetchData(city: cityEnum) {
         if (this.fetching) return;
         this.fetching = true;
-        this.realEstateService.getDashboardData().subscribe({
+
+        console.log('Fetching data for city:', city);
+        this.realEstateService.getDashboardData(city).subscribe({
             next: (data) => {
-                this.data.set(data);
+                this.data.set(data);   //this line wrror
                 this.lastFetched = Date.now(); // store fetch time
                 this.fetching = false;
             },
@@ -55,15 +64,52 @@ export class CalculateStatisticsService implements OnDestroy {
 
         // If we have no data or data is stale (>1 day) -> fetch
         if (!isFresh || !this.hasData()) {
-            this.fetchData();
+            this.fetchData(this.city());
         }
 
         return this.data;
     }
 
+    // public getCityData = computed(() => {
+    //     const city = this.city();
+    //     console.log('dddd', city);
+    //     this.fetchData(city);
+    //     return this.data().data.filter(item => item.location.city === city);
+    // });
+
+     private setupSignalListener(): void {
+        effect(() => {
+            console.log('City changed to:', this.city());
+            const value = this.city();
+            
+            // Run outside Angular zone to avoid change detection issues
+            // this.ngZone.runOutsideAngular(() => {
+            //     this.fetchData(value);
+            // });
+
+
+            untracked(() => {
+             this.fetchData(value);
+            });
+        });
+    }
+
+
+//    private setupSignalListener(): void {
+//         effect(() => {
+//             console.log('City changed to:', this.city());
+//             const value = this.city(); // Replace 'yourSignal' with your signal name
+//             // this.fetchData(value); // Replace with your service function
+
+//             setTimeout(() => {
+//                 this.fetchData(value); // Now safe from ExpressionChangedAfterItHasBeenCheckedError
+//             }, 0);
+//         });
+//     }
     public barChartDataByBuildingType = computed(() => {
         const results = this.data();
         const groupedBy = this.groupedBy();
+        console.log('Grouped by:', groupedBy);
         if (!results || results.data.length === 0) {
             return {
                 datasets: [

@@ -25,11 +25,20 @@ export class MapViewComponent implements AfterViewInit {
         const groupedBy = this.calculateStatisticsService.groupedBy(); // tracked
         this.points = []; // clear immediately when groupedBy changes
     });
+   
+    private readonly cityChange = effect(() => {
+        const city = this.calculateStatisticsService.city(); // tracked
+        this.points = []; // clear immediately when groupedBy changes
+
+        console.log('MAPP city')
+    });
 
     private readonly pointsEffect = effect(() => {
         const groupedBy = this.calculateStatisticsService.groupedBy();
         if (!this.viewReady() || this.points.length > 0)
             return;
+
+        console.log('MapViewComponent MAPPP');
         const data = this.data$();// read the signal
         const items = data?.data ?? [];
 
