@@ -1,4 +1,4 @@
-import { Component, Inject, OnInit, PLATFORM_ID } from '@angular/core';
+import { Component, Inject, OnInit, PLATFORM_ID, ViewChild } from '@angular/core';
 import { CalculateStatisticsService } from '../../services/calculate-statistics';
 import { computed } from '@angular/core';
 import { SearchFilterComponent } from "../search-filter/search-filter-component";
@@ -28,6 +28,8 @@ import { cityEnum } from '../../models/enums/city.enum';
     styleUrl: './dashboard.component.scss'
 })
 export class DashboardComponent implements OnInit {
+
+     @ViewChild(LineChartComponent) lineChart!: LineChartComponent;
 
     isBrowser = false;
     public realEstateStatisticsKey = realEstateStatisticsKey;
@@ -78,6 +80,8 @@ export class DashboardComponent implements OnInit {
             next: (data) => {
                 this.labels = data.map(item => item.addedDate.toString());
                 this.dataPoints = data.map(item => item.avgPricePerMeter);
+                if(this.lineChart)
+                    this.lineChart.updateChart();
             }
         });
     }

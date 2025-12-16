@@ -22,12 +22,16 @@
 
         <app-bar-chart class="bar-chart-building-type" [chartData]="barChartDataByBuildingType"
             [chartTitle]="calculateStatisticsService.groupedBy()"></app-bar-chart>
-        <app-map-view class="map-view"></app-map-view>
+        <!-- <app-map-view class="map-view"></app-map-view> -->
     </div>
     }
 </div>
 }@else {
 <div class="loading-container">
     <mat-spinner></mat-spinner>
+    <span>
+        <strong>Note:</strong> First API request may take ~2 minutes as our server wakes up (Render hosting cold start).
+        Subsequent requests are instant
+    </span>
 </div>
 }

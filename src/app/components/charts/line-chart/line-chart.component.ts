@@ -10,7 +10,6 @@ import { Chart, ChartConfiguration } from 'chart.js';
 export class LineChartComponent implements AfterViewInit, OnDestroy {
     @ViewChild('chart', { static: false }) chartRef!: ElementRef<HTMLCanvasElement>;
 
-
     @Input() labels: string[] = [];
     @Input() dataPoints: number[] = [];
     @Input() chartTitle: string = 'Line Chart';
@@ -18,9 +17,7 @@ export class LineChartComponent implements AfterViewInit, OnDestroy {
     chart!: Chart;
 
     ngOnChanges(changes: SimpleChanges) {
-        if (changes) {
-            this.updateChart();
-        }
+        this.updateChart();
     }
 
     ngAfterViewInit(): void {
@@ -31,8 +28,8 @@ export class LineChartComponent implements AfterViewInit, OnDestroy {
         this.chart?.destroy();
     }
 
-    private updateChart(): void {
-         if (!this.chartRef?.nativeElement) {
+    public updateChart(): void {
+        if (!this.chartRef?.nativeElement) {
             return;
         }
 

@@ -1,17 +1,12 @@
 .selects-container {
-    // display: flex;
     gap: 16px;
-    // align-items: end;
-    // padding: 20px;
     background: #f8f9fa;
     border-radius: 12px;
     margin: 16px 0;
     padding: 20px;
     display: flex;
     gap: 20px;
-    /* Adds 20px space between the selects */
     align-items: center;
-    /* Optional vertical alignment */
 
     @media (max-width: 768px) {
         flex-direction: column;
