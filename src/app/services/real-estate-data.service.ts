@@ -5,6 +5,7 @@ import { PropertydataAPI } from '../models/property';
 import { environment } from '../../enviroments/environment';
 import { timelinePriceDto } from '../models/timelinePriceDto';
 import { cityEnum } from '../models/enums/city.enum';
+import { BarChartData } from '../models/barChartData';
 
 @Injectable({ providedIn: 'root' })
 export class RealEstateDataService {
@@ -21,5 +22,13 @@ export class RealEstateDataService {
 
     getTimeLinePrice(city: cityEnum): Observable<timelinePriceDto[]> {
         return this.http.get<timelinePriceDto[]>(`${this.apiUrl}/getTimelinePrice/${city}`);
+    }
+
+    getGroupedStatistics(groupedBy: string, city: cityEnum): Observable<BarChartData> {
+        return this.http.get<BarChartData>(`${this.apiUrl}/getGroupedStatistics/${groupedBy}/${city}`);
+    }
+
+    filterByParameter(groupBy: string, city: cityEnum, parameter: string): Observable<BarChartData> {
+        return this.http.get<BarChartData>(`${this.apiUrl}/filterByParameter/${groupBy}/${city}/${encodeURIComponent(parameter)}`);
     }
 }

@@ -1,10 +1,11 @@
-import { Injectable, signal, computed, OnDestroy, Inject, PLATFORM_ID, effect, NgZone, untracked } from "@angular/core";
+import { Injectable, signal, computed, OnDestroy, effect, untracked } from "@angular/core";
 import { RealEstateDataService } from './real-estate-data.service';
 import { Property, PropertydataAPI } from "../models/property";
 import { RealEstateStatistics } from "../models/resultStatistics";
 import { ChartConfiguration } from "chart.js";
-import { copyFile } from "fs";
 import { cityEnum } from "../models/enums/city.enum";
+import { BarChartData } from "../models/barChartData";
+import { realEstateStatisticsKey } from "../models/enums/statisticsParameter.enum";
 
 @Injectable({ providedIn: 'root' })
 
@@ -13,6 +14,20 @@ export class CalculateStatisticsService implements OnDestroy {
     public groupedBy = signal<string>('market');
     public city = signal<cityEnum>(cityEnum.Krakow);
     public hasData = computed(() => (this.data().data?.length ?? 0) > 0);
+
+    private _barChartData = signal<BarChartData>({
+        labels: [],
+        datasets: [{ data: [], label: 'Liczba ofert' }]
+    });
+
+    public barChartDataByBuildingType = computed(() => this._barChartData());
+
+    private _barChartFiltered = signal<BarChartData>({
+        labels: [],
+        datasets: [{ data: [], label: 'Liczba ofert' }]
+    });
+
+    public barChartFiltered = computed(() => this._barChartFiltered());  //get string in parameter
 
     public groupByTypes: string[] = [
         'price',
@@ -25,15 +40,12 @@ export class CalculateStatisticsService implements OnDestroy {
         'location.district'
     ];
     private intervalId?: number;
-    private lastFetched?: number;       // timestamp of last successful fetch (ms)
     private fetching = false;
 
-    constructor(private readonly realEstateService: RealEstateDataService,
-               private readonly ngZone: NgZone
-  ) {
-        // this.getData();
-
+    constructor(private readonly realEstateService: RealEstateDataService) {
         this.setupSignalListener();
+
+        this.getData();
     }
 
     ngOnDestroy(): void {
@@ -44,11 +56,9 @@ export class CalculateStatisticsService implements OnDestroy {
         if (this.fetching) return;
         this.fetching = true;
 
-        console.log('Fetching data for city:', city);
         this.realEstateService.getDashboardData(city).subscribe({
             next: (data) => {
-                this.data.set(data);   //this line wrror
-                this.lastFetched = Date.now(); // store fetch time
+                this.data.set(data);
                 this.fetching = false;
             },
             error: () => {
@@ -58,58 +68,67 @@ export class CalculateStatisticsService implements OnDestroy {
     }
 
     getData() {
-        const ONE_DAY = 24 * 60 * 60 * 1000;
-        const now = Date.now();
-        const isFresh = this.lastFetched !== undefined && (now - this.lastFetched) < ONE_DAY;
-
-        // If we have no data or data is stale (>1 day) -> fetch
-        if (!isFresh || !this.hasData()) {
+        if (!this.hasData()) {
             this.fetchData(this.city());
         }
 
         return this.data;
     }
 
-    // public getCityData = computed(() => {
-    //     const city = this.city();
-    //     console.log('dddd', city);
-    //     this.fetchData(city);
-    //     return this.data().data.filter(item => item.location.city === city);
-    // });
-
-     private setupSignalListener(): void {
+    private setupSignalListener(): void {
         effect(() => {
-            console.log('City changed to:', this.city());
             const value = this.city();
-            
-            // Run outside Angular zone to avoid change detection issues
-            // this.ngZone.runOutsideAngular(() => {
-            //     this.fetchData(value);
-            // });
-
+            const group = this.groupedBy();
+            console.log('city changed', value);
 
             untracked(() => {
-             this.fetchData(value);
+                this.fetchBarChartData();
+                this.filterByParameter();
             });
         });
     }
 
+    private fetchBarChartData(): void {
+        const group = this.groupedBy();
+        const city = this.city();
 
-//    private setupSignalListener(): void {
-//         effect(() => {
-//             console.log('City changed to:', this.city());
-//             const value = this.city(); // Replace 'yourSignal' with your signal name
-//             // this.fetchData(value); // Replace with your service function
+        this.realEstateService.getGroupedStatistics(group, city).subscribe({
+            next: data => {
+                this._barChartData.set(data)
+            },
+            error: err => {
+                console.error('getGroupedStatistics error', err);
+                this._barChartData.set({
+                    labels: [],
+                    datasets: [{ data: [], label: 'Liczba ofert' }]
+                });
+            }
+        });
+    }
 
-//             setTimeout(() => {
-//                 this.fetchData(value); // Now safe from ExpressionChangedAfterItHasBeenCheckedError
-//             }, 0);
-//         });
-//     }
-    public barChartDataByBuildingType = computed(() => {
+    public filterByParameter(): void {
+        const parameter = realEstateStatisticsKey.MedianPricePerMeter;
+        const group = this.groupedBy();
+        const city = this.city();
+
+        this.realEstateService.filterByParameter(group, city, parameter)
+            .subscribe({
+                next: data => this._barChartFiltered.set(data),
+                error: () => {
+                    this._barChartFiltered.set({
+                        labels: [],
+                        datasets: [{ data: [], label: 'Liczba ofert' }]
+                    });
+                }
+            });
+
+    };
+
+    public barChartDataByBuildingType222222 = computed(() => {
+        console.time('barChartDataByBuildingType');    //TODO write this function in C# in paramters get results and groupedBy      
         const results = this.data();
         const groupedBy = this.groupedBy();
-        console.log('Grouped by:', groupedBy);
+        console.log(results)
         if (!results || results.data.length === 0) {
             return {
                 datasets: [
@@ -148,6 +167,7 @@ export class CalculateStatisticsService implements OnDestroy {
             counts = keys.map(key => groupMap.get(key)!);
         }
 
+        console.timeEnd('barChartDataByBuildingType');
         return {
             datasets: [
                 { data: counts, label: 'Liczba ofert' }
@@ -246,7 +266,7 @@ export class CalculateStatisticsService implements OnDestroy {
     public getPriceText(): string {
         const data = this.data();
         const price = this.calculateAveragePrice(data.data);
-        return `Średnia cena : ${this.convertNumberPrice(price)} PLN`;
+        return `AVG total price : ${this.convertNumberPrice(price)} PLN`;
     };
 
     private convertNumberPrice(price: number): string {
@@ -263,7 +283,7 @@ export class CalculateStatisticsService implements OnDestroy {
     public getInfoText(): string {
         const data = this.data();
         const pricePerMeter = this.calculateAveragePricePerMeter(data.data);
-        return `Średnia cena za metr: ${this.convertNumberPrice(pricePerMeter)} PLN`;
+        return `AVG price per meter: ${this.convertNumberPrice(pricePerMeter)} PLN`;
     };
 
     private calculateMedianPricePerMeter(data: Property[]): number {
@@ -327,7 +347,8 @@ export class CalculateStatisticsService implements OnDestroy {
         return palette[idx % palette.length];
     }
 
-    public filterByParameter = (parameter: string) =>
+    public filterByParameter22 = (parameter: string) =>  //TODO please write this function in C# parameter is given and data
+
         computed(() => {
             const datasets = this.buildChartData();
             if (!datasets?.labels) {

@@ -18,10 +18,10 @@
         <app-info-labels class="info-labels"></app-info-labels>
 
         <app-bar-chart class="bar-chart-median" [chartData]="barChartDataMedianPricePerMeter"
-            [chartTitle]="'Wykres mediana ceny za metr'"></app-bar-chart>
+            [chartTitle]="'Median price per square meter: '"></app-bar-chart>
 
         <app-bar-chart class="bar-chart-building-type" [chartData]="barChartDataByBuildingType"
-            [chartTitle]="calculateStatisticsService.groupedBy()"></app-bar-chart>
+            [chartTitle]="'Number of apartments grouped by:  ' + calculateStatisticsService.groupedBy()"></app-bar-chart>
         <!-- <app-map-view class="map-view"></app-map-view> -->
     </div>
     }

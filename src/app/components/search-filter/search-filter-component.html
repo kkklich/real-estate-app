@@ -1,6 +1,6 @@
 <div class="selects-container">
     <mat-form-field appearance="fill" class="select-field">
-        <mat-label>Select a string</mat-label>
+        <mat-label>Group by</mat-label>
         <mat-select class="select" panelClass="select-panel" [value]="calculateStatisticsService.groupedBy()"
             (selectionChange)="onGroupByTypeChange($event.value)">
             @for (type of calculateStatisticsService.groupByTypes; track type) {
@@ -12,7 +12,7 @@
     </mat-form-field>
 
     <mat-form-field appearance="fill" class="select-field">
-        <mat-label>Select a city</mat-label>
+        <mat-label>Select city</mat-label>
         <mat-select [value]="calculateStatisticsService.city()" (selectionChange)="onCityChange($event.value)">
             @for (city of cityList; track city) {
             <mat-option [value]="city">

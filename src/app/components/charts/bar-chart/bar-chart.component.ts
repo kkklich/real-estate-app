@@ -1,7 +1,7 @@
 
 import { MatCardModule } from '@angular/material/card';
 import { BaseChartDirective } from 'ng2-charts';
-import { Component, Input, Signal } from '@angular/core';
+import { Component, Input, Signal, computed } from '@angular/core';
 import { ChartData, ChartOptions } from 'chart.js';
 import { Observable } from 'rxjs';
 import { Property } from '../../../models/property';

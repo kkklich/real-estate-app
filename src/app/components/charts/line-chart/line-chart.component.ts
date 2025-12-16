@@ -16,9 +16,11 @@ export class LineChartComponent implements AfterViewInit, OnDestroy {
 
     chart!: Chart;
 
-    ngOnChanges(changes: SimpleChanges) {
-        this.updateChart();
-    }
+    // ngOnChanges(changes: SimpleChanges) {
+    //     // if (changes) {
+    //     this.updateChart();
+    //     // }
+    // }
 
     ngAfterViewInit(): void {
         this.updateChart();
@@ -29,6 +31,8 @@ export class LineChartComponent implements AfterViewInit, OnDestroy {
     }
 
     public updateChart(): void {
+
+        console.log('updateChart');
         if (!this.chartRef?.nativeElement) {
             return;
         }

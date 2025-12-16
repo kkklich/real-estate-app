@@ -1,11 +1,27 @@
 .two-labels-container {
     display: flex;
-    flex-direction: row;
-    gap: 16px;
-    padding: 16px;
+    flex-direction: column;
+    gap: 8px;
+    padding: 8px;
     border-radius: 8px;
     align-items: center;
-    justify-content: flex-start;
+    justify-content: center;
+}
+
+/* Switch to horizontal layout on larger screens */
+@media (min-width: 768px) {
+    .two-labels-container {
+        gap: 16px;
+        padding: 12px 16px;
+        justify-content: flex-start;
+        align-items: center;
+    }
+
+    .two-labels-container .label {
+        min-width: 160px;
+        width: 280px;
+        text-align: center;
+    }
 }
 
 .label {

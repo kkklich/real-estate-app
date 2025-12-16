@@ -29,7 +29,7 @@ import { cityEnum } from '../../models/enums/city.enum';
 })
 export class DashboardComponent implements OnInit {
 
-     @ViewChild(LineChartComponent) lineChart!: LineChartComponent;
+    @ViewChild(LineChartComponent) lineChart!: LineChartComponent;
 
     isBrowser = false;
     public realEstateStatisticsKey = realEstateStatisticsKey;
@@ -43,12 +43,9 @@ export class DashboardComponent implements OnInit {
         this.calculateStatisticsService.barChartDataByBuildingType()
     );
 
-    public barChartDataMedianArea = computed(() =>
-        this.calculateStatisticsService.filterByParameter(realEstateStatisticsKey.MedianArea)()
-    );
 
     public barChartDataMedianPricePerMeter = computed(() =>
-        this.calculateStatisticsService.filterByParameter(realEstateStatisticsKey.MedianPricePerMeter)()
+        this.calculateStatisticsService.barChartFiltered()
     );
 
     constructor(
@@ -67,7 +64,7 @@ export class DashboardComponent implements OnInit {
         this.calculateStatisticsService.groupedBy.set(type || 'buildingType');
     }
 
-    public onCityChange(city: cityEnum) {
+    public onCityChange(city: cityEnum) { //TODO here city is changed
         if (city) {
             this.calculateStatisticsService.city.set(city);
             this.getTimelineData();
@@ -80,8 +77,12 @@ export class DashboardComponent implements OnInit {
             next: (data) => {
                 this.labels = data.map(item => item.addedDate.toString());
                 this.dataPoints = data.map(item => item.avgPricePerMeter);
-                if(this.lineChart)
+
+                if (this.lineChart) {
+                    this.lineChart.labels = this.labels;
+                    this.lineChart.dataPoints = this.dataPoints;
                     this.lineChart.updateChart();
+                }
             }
         });
     }
