@@ -3,6 +3,7 @@ import { CalculateStatisticsService } from '../../services/calculate-statistics'
 import { computed } from '@angular/core';
 import { SearchFilterComponent } from "../search-filter/search-filter-component";
 import { MatToolbarModule } from '@angular/material/toolbar';
+import { MatIconModule } from '@angular/material/icon';
 import { MapViewComponent } from "../charts/map-view/map-view.component";
 import { BarChartComponent } from "../charts/bar-chart/bar-chart.component";
 import { isPlatformBrowser } from '@angular/common';
@@ -18,6 +19,7 @@ import { cityEnum } from '../../models/enums/city.enum';
     imports: [
         SearchFilterComponent,
         MatToolbarModule,
+        MatIconModule,
         MapViewComponent,
         BarChartComponent,
         InfoLabels,
@@ -36,9 +38,6 @@ export class DashboardComponent implements OnInit {
     protected labels: string[] = [];
     protected dataPoints: number[] = [];
     protected countPoints: number[] = [];
-    public isDataLoaded = computed(() =>
-        this.calculateStatisticsService.data().data.length > 0
-    );
 
     public barChartDataByBuildingType = computed(() =>
         this.calculateStatisticsService.barChartDataByBuildingType()

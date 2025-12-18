@@ -22,7 +22,26 @@
 
         <app-bar-chart class="bar-chart-building-type" [chartData]="barChartDataByBuildingType"
             [chartTitle]="'Number of apartments grouped by:  ' + calculateStatisticsService.groupedBy()"></app-bar-chart>
+        <!-- ✅ Load map when browser is IDLE (default behavior) -->
+        @defer (on idle) {
         <app-map-view class="map-view"></app-map-view>
+        } @placeholder {
+        <div class="map-placeholder">
+            <mat-icon>map</mat-icon>
+            <span>🗺️ Map loads when ready</span>
+        </div>
+        } @loading (after 300ms; minimum 1s) {
+        <div class="map-loading">
+            <mat-spinner diameter="30"></mat-spinner>
+            <span>Rendering interactive map...</span>
+        </div>
+        } @error {
+        <div class="map-error">
+            <mat-icon>error_outline</mat-icon>
+            <span>Map unavailable</span>
+        </div>
+        }
+
     </div>
     }
 </div>

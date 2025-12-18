@@ -1,8 +1,8 @@
-import { AfterViewInit, Component, effect, signal, Signal, untracked } from '@angular/core';
+import { AfterViewInit, Component, effect, signal, computed, untracked } from '@angular/core';
 import * as maplibregl from 'maplibre-gl';
 import { CalculateStatisticsService } from '../../../services/calculate-statistics';
-import { PropertydataAPI } from '../../../models/property';
 import * as GeoJSON from 'geojson';
+import { getCityCenter } from '../../../models/enums/city.enum';
 
 @Component({
     selector: 'app-map-view',
@@ -12,38 +12,24 @@ import * as GeoJSON from 'geojson';
 })
 export class MapViewComponent implements AfterViewInit {
 
-    data$!: Signal<PropertydataAPI>;
+    private mapInstance?: maplibregl.Map;
 
     private readonly viewReady = signal(false);
-    private points: Array<{ lat: number, lng: number, label: string, value: number, url: string }> = [];
+    private mapPoints: Array<{ lat: number, lng: number, label: string, value: number, url: string }> = [];
 
-    constructor(readonly calculateStatisticsService: CalculateStatisticsService) {
-        this.data$ = this.calculateStatisticsService.getData();
+    constructor(readonly calculateStatisticsService: CalculateStatisticsService) { }
+
+    ngAfterViewInit(): void {
+        this.viewReady.set(true);
     }
 
-    private readonly resetOnGroupChange = effect(() => {
-        const groupedBy = this.calculateStatisticsService.groupedBy(); // tracked
-        this.points = []; // clear immediately when groupedBy changes
-    });
-   
-    private readonly cityChange = effect(() => {
-        const city = this.calculateStatisticsService.city(); // tracked
-        this.points = []; // clear immediately when groupedBy changes
-
-        console.log('MAPP city')
-    });
-
-    private readonly pointsEffect = effect(() => {
+    // ✅ Reactive map data derived from service signals
+    private readonly mapData = computed(() => {
+        const data = this.calculateStatisticsService.getData();
         const groupedBy = this.calculateStatisticsService.groupedBy();
-        if (!this.viewReady() || this.points.length > 0)
-            return;
+        const items = data()?.data ?? [];
 
-        console.log('MapViewComponent MAPPP');
-        const data = this.data$();// read the signal
-        const items = data?.data ?? [];
-
-        // call if it's a signal/method
-        this.points = items
+        return items
             .map(item => {
                 const value = this.calculateStatisticsService.getNested(item, groupedBy);
                 const lat = item?.location?.lat;
@@ -64,53 +50,76 @@ export class MapViewComponent implements AfterViewInit {
                 p.lng !== 0
             )
             .map(p => ({
-                // Narrow to numbers after filter
                 lat: p.lat as number,
                 lng: p.lng as number,
                 label: p.label,
                 value: p.value,
                 url: p.url
             }));
+    });
 
-        if (this.viewReady() && this.points.length) {
+    // ✅ Single effect that reacts to ALL dependencies + waits for data
+    private readonly mapEffect = effect(() => {
+        // Track all reactive dependencies
+        this.calculateStatisticsService.city();
+        this.calculateStatisticsService.groupedBy();
+        this.mapData(); // This tracks data$ internally
+
+        // Early exit conditions
+        if (!this.viewReady() || this.mapData().length === 0) {
+            this.mapPoints = [];
+            return;
+        }
+
+        // ✅ Data is guaranteed to be loaded here - computed only runs when data$ has value
+        this.mapPoints = this.mapData();
+
+        // Generate map outside tracking context
+        if (this.viewReady()) {
             untracked(() => this.generatemap());
+        }
+    }, { allowSignalWrites: true });
+
+    private readonly cityChange = effect(() => {
+        const city = this.calculateStatisticsService.city(); // tracked
+        this.mapPoints = []; // clear immediately when groupedBy changes
+
+        const [lng, lat] = getCityCenter(city);
+        if (this.mapInstance) {
+            this.mapInstance.setCenter([lng, lat]);
+            this.mapInstance.setZoom(10);
         }
     });
 
-    ngAfterViewInit(): void {
-        this.viewReady.set(true);
-    }
-
     private generatemap(): void {
-        if (!this.points.length) return;
-
-        const map = new maplibregl.Map({
+        if (!this.mapPoints.length) return;
+        this.mapInstance = undefined;
+        const [lng, lat] = getCityCenter(this.calculateStatisticsService.city());
+        this.mapInstance = new maplibregl.Map({
             container: 'map',
             style: `https://api.maptiler.com/maps/hybrid/style.json?key=fE7HmfEfHzBPNM7hOEzA`,
-            center: [this.points[0].lng, this.points[0].lat],
+            center: [lng, lat],
             zoom: 10
         });
 
-        map.addControl(new maplibregl.NavigationControl(), 'top-right');
+        this.mapInstance.addControl(new maplibregl.NavigationControl(), 'top-right');
 
-        map.on('load', () => {
-            // Convert points to GeoJSON
+        this.mapInstance.on('load', () => {
             const geojson: GeoJSON.FeatureCollection = {
                 type: 'FeatureCollection',
-                features: this.points.map(p => ({
+                features: this.mapPoints.map(p => ({
                     type: 'Feature',
                     geometry: { type: 'Point', coordinates: [p.lng, p.lat] },
                     properties: {
                         label: p.label,
                         value: p.value,
-                        color: this.getColorGradient(p.value),
+                        color: this.getColorGradient(p),
                         url: p.url
                     }
                 }))
             };
 
-            // Add source and layers INSIDE 'load' event
-            map.addSource('properties', {
+            this.mapInstance?.addSource('properties', {
                 type: 'geojson',
                 data: geojson,
                 cluster: true,
@@ -118,8 +127,7 @@ export class MapViewComponent implements AfterViewInit {
                 clusterRadius: 50
             });
 
-            // All your layers and event handlers go here (clusters, cluster-count, unclustered-point)
-            map.addLayer({
+            this.mapInstance?.addLayer({
                 id: 'clusters',
                 type: 'circle',
                 source: 'properties',
@@ -136,8 +144,7 @@ export class MapViewComponent implements AfterViewInit {
                 }
             });
 
-            // Add cluster count labels
-            map.addLayer({
+            this.mapInstance?.addLayer({
                 id: 'cluster-count',
                 type: 'symbol',
                 source: 'properties',
@@ -149,8 +156,7 @@ export class MapViewComponent implements AfterViewInit {
                 }
             });
 
-            // Add non-clustered point layer (individual markers)
-            map.addLayer({
+            this.mapInstance?.addLayer({
                 id: 'unclustered-point',
                 type: 'circle',
                 source: 'properties',
@@ -163,7 +169,7 @@ export class MapViewComponent implements AfterViewInit {
                 }
             });
 
-            map.on('click', 'unclustered-point', (e) => {
+            this.mapInstance?.on('click', 'unclustered-point', (e) => {
                 const feature = e.features![0];
                 const props = feature.properties as any;
 
@@ -171,72 +177,49 @@ export class MapViewComponent implements AfterViewInit {
 
                 const htmlContent = `<strong>${props.label}</strong><br>
                          ${this.calculateStatisticsService.groupedBy().toString()}: ${props.value}
-                                ${urlHtml}
-                                    `;
+                                ${urlHtml}`;
 
                 new maplibregl.Popup()
                     .setLngLat(e.lngLat)
                     .setHTML(htmlContent)
-                    .addTo(map);
+                    .addTo(this.mapInstance!);
             });
 
-            // Fit bounds after layers render
             const bounds = new maplibregl.LngLatBounds();
-            this.points.forEach(p => bounds.extend([p.lng, p.lat]));
-            map.fitBounds(bounds, { padding: 50 });
+            this.mapPoints.forEach(p => bounds.extend([p.lng, p.lat]));
+            this.mapInstance?.fitBounds(bounds, { padding: 50 });
         });
     }
 
-    private getColorGradient(value: any): string {
+    private getColorGradient(point: { value: any, }): string {
         let clamped = 1;
-        if (typeof value === 'number' && !isNaN(value)) {
-
-            const minValue = Math.min(...this.points.map(p => p.value));
-            const maxValue = Math.max(...this.points.map(p => p.value));
-            const ratio = ((value - minValue) / (maxValue - minValue));
-
-            clamped = Math.max(0, Math.min(1, ratio)); // keep between 0 and 1
+        if (typeof point.value === 'number' && !isNaN(point.value)) {
+            const minValue = Math.min(...this.mapPoints.map(p => p.value));
+            const maxValue = Math.max(...this.mapPoints.map(p => p.value));
+            const ratio = ((point.value - minValue) / (maxValue - minValue));
+            clamped = Math.max(0, Math.min(1, ratio));
         } else {
-            const ratioString = this.scoreTags01(this.points.map(p => p.value.toString()));
-            clamped = ratioString.get(value.toString()) ?? 0;
+            const ratioString = this.scoreTags01(this.mapPoints.map(p => p.value.toString()));
+            clamped = ratioString.get(point.value.toString()) ?? 0;
         }
 
-        const r = Math.round(255 * clamped);            // red increases with value
-        const g = 0;                                    // no green for simplicity
-        const b = Math.round(255 * (1 - clamped));      // blue decreases with value
+        const r = Math.round(255 * clamped);
+        const g = 0;
+        const b = Math.round(255 * (1 - clamped));
 
         return `rgb(${r},${g},${b})`;
     }
 
-    scoreTags01(tags: Iterable<string>, options?: { scorer?: (tag: string) => number }): Map<string, number> {
-        const arr = Array.from(new Set(tags)); // ensure uniqueness [1]
+    scoreTags01(tags: Iterable<string>): Map<string, number> {
+        const arr = Array.from(new Set(tags));
         const m = arr.length;
 
-        // No tags -> empty map
         if (m === 0) return new Map();
+        if (m === 1) return new Map([[arr[0], 1]]);
 
-        if (options?.scorer) {
-            // Use custom scorer then min-max normalize to [0,1] [7]
-            const raw = arr.map(t => ({ t, s: options.scorer!(t) }));
-            const sMin = Math.min(...raw.map(r => r.s));
-            const sMax = Math.max(...raw.map(r => r.s));
-            const denom = sMax - sMin;
-            const norm = new Map<string, number>();
-            for (const { t, s } of raw) {
-                const v = denom === 0 ? 1 : (s - sMin) / denom; // if all equal, map to 1 [7]
-                norm.set(t, v);
-            }
-            return norm;
-        }
-
-        // Even spacing across [0,1] using rank
-        // Single element => 1. For >1, first=0, last=1, linear spacing. [15]
-        if (m === 1) {
-            return new Map([[arr[0], 1]]);
-        }
         const map = new Map<string, number>();
         for (let i = 0; i < m; i++) {
-            const v = i / (m - 1); // 0 ... 1 inclusive [15]
+            const v = i / (m - 1);
             map.set(arr[i], v);
         }
         return map;
