@@ -65,7 +65,7 @@ export class DashboardComponent implements OnInit {
         this.calculateStatisticsService.groupedBy.set(type || 'buildingType');
     }
 
-    public onCityChange(city: cityEnum) { //TODO here city is changed
+    public onCityChange(city: cityEnum) {
         if (city) {
             this.calculateStatisticsService.city.set(city);
             this.getTimelineData();

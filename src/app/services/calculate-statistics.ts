@@ -63,6 +63,7 @@ export class CalculateStatisticsService implements OnDestroy {
 
         this.realEstateService.getDashboardData(city).subscribe({
             next: (data) => {
+                console.log('Fetched data count:', data.data.length);
                 this.data.set(data);
                 this.fetching = false;
             },
@@ -116,94 +117,16 @@ export class CalculateStatisticsService implements OnDestroy {
         const group = this.groupedBy();
         const city = this.city();
 
-        this.realEstateService.filterByParameter(group, city, parameter)
-            .subscribe({
-                next: data => this._barChartFiltered.set(data),
-                error: () => {
-                    this._barChartFiltered.set({
-                        labels: [],
-                        datasets: [{ data: [], label: 'Liczba ofert' }]
-                    });
-                }
-            });
-
-    };
-
-    public barChartDataByBuildingType222222 = computed(() => {
-        console.time('barChartDataByBuildingType');    //TODO write this function in C# in paramters get results and groupedBy      
-        const results = this.data();
-        const groupedBy = this.groupedBy();
-        console.log(results)
-        if (!results || results.data.length === 0) {
-            return {
-                datasets: [
-                    { data: [], label: 'Liczba ofert' }
-                ],
-                labels: []
-            };
-        }
-        const groupMap = new Map<string, number>();
-        results.data.forEach(item => {
-            let key = this.getNested(item, groupedBy);
-            if (typeof key === 'number') {
-                key = Math.round(key).toString();
-            } else if (typeof key === 'boolean') {
-                key = key.toString();
-            } else {
-                key = key ?? 'Unknown';
+        this.realEstateService.filterByParameter(group, city, parameter).subscribe({
+            next: data => this._barChartFiltered.set(data),
+            error: () => {
+                this._barChartFiltered.set({
+                    labels: [],
+                    datasets: [{ data: [], label: 'Liczba ofert' }]
+                });
             }
-            groupMap.set(key, (groupMap.get(key) || 0) + 1);
         });
-        const keys = Array.from(groupMap.keys());
-        const allNumeric = keys.every(key => !isNaN(Number(key)));
-        let labels: string[];
-        let counts: number[];
-        if (allNumeric) {
-            let binSize = this.getBinSizeValue(groupedBy);
-            const bins = this.binNumericKeys(keys, groupMap, binSize);
-            const pairs = Array.from(bins.entries())
-                .map(([key, value]) => ({ key, value }))
-                .sort((a, b) => Number(a.key) - Number(b.key));
-
-            labels = pairs.map(pair => pair.key.toString());
-            counts = pairs.map(pair => pair.value);
-        } else {
-            labels = keys;
-            counts = keys.map(key => groupMap.get(key)!);
-        }
-
-        console.timeEnd('barChartDataByBuildingType');
-        return {
-            datasets: [
-                { data: counts, label: 'Liczba ofert' }
-            ],
-            labels
-        };
-    });
-
-    private getBinSizeValue(key: string): number {
-        switch (key) {
-            case 'pricePerMeter': return 200;
-            case 'price': return 5000;
-            default: return 1;
-        }
-    }
-
-    binNumericKeys(
-        keys: string[],
-        groupMap: Map<string, number>,
-        binSize: number = 50
-    ): Map<string, number> {
-        const bins: Map<string, number> = new Map();
-        keys.forEach(key => {
-            const num = Number(key);
-            if (isNaN(num)) return;
-            const binEnd = Math.ceil(num / binSize) * binSize;
-            const binLabel = binEnd.toString();
-            bins.set(binLabel, (bins.get(binLabel) || 0) + (groupMap.get(key) || 0));
-        });
-        return bins;
-    }
+    };
 
     public getNested(obj: any, path: string): any {
         return path.split('.').reduce((acc, part) => (acc ? acc[part] : undefined), obj);
@@ -278,11 +201,6 @@ export class CalculateStatisticsService implements OnDestroy {
             .replace(/\B(?=(\d{3})+(?!\d))/g, " ");
     }
 
-    private calculateAveragePricePerMeter(data: Property[]): number {
-        if (data.length === 0) return 0;
-        return data.reduce((acc, x) => acc + x.pricePerMeter, 0) / data.length;
-    }
-
     public getInfoText(pricePerMeter: number): string {
         return `AVG price per meter: ${this.convertNumberPrice(pricePerMeter)} PLN`;
     };
@@ -347,34 +265,6 @@ export class CalculateStatisticsService implements OnDestroy {
         ];
         return palette[idx % palette.length];
     }
-
-    public filterByParameter22 = (parameter: string) =>  //TODO please write this function in C# parameter is given and data
-
-        computed(() => {
-            const datasets = this.buildChartData();
-            if (!datasets?.labels) {
-                return { datasets: [], labels: [] };
-            }
-            const index = datasets.labels.indexOf(parameter);
-            if (index === -1) {
-                return { datasets: [], labels: [] };
-            }
-
-            const newDatasets = datasets.datasets.map(ds => ({
-                ...ds,
-                data: [ds.data[index]],
-            }));
-
-            const datas = newDatasets.flatMap(ds => ds.data);
-            const labels = newDatasets.map(ds => ds.label);
-
-            return {
-                datasets: [
-                    { data: datas, label: 'Liczba ofert' }
-                ],
-                labels
-            };
-        });
 
     public getTimelineData(): Observable<{ labels: string[]; dataPoints: number[]; countPoints: number[]; }> {
         const city = this.city();
