@@ -75,16 +75,18 @@ export class DashboardComponent implements OnInit {
     private getTimelineData(): void {
         this.calculateStatisticsService.getTimelineData().subscribe({
             next: ({ labels, dataPoints, countPoints }) => {
-                this.labels = labels;
-                this.dataPoints = dataPoints;
-                this.countPoints = countPoints;
+                setTimeout(() => {
+                    this.labels = labels;
+                    this.dataPoints = dataPoints;
+                    this.countPoints = countPoints;
 
-                if (this.lineChart) {
-                    this.lineChart.labels = this.labels;
-                    this.lineChart.dataPoints = this.dataPoints;
-                    this.lineChart.countPoints = this.countPoints;
-                    this.lineChart.updateChart();
-                }
+                    if (this.lineChart) {
+                        this.lineChart.labels = this.labels;
+                        this.lineChart.dataPoints = this.dataPoints;
+                        this.lineChart.countPoints = this.countPoints;
+                        this.lineChart.updateChart();
+                    }
+                }, 0);
             }
         });
     }

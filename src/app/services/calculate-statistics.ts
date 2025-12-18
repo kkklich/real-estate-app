@@ -272,6 +272,7 @@ export class CalculateStatisticsService implements OnDestroy {
             tap(data => {
                 this.avgPriceString.set(this.getInfoText(data[data.length - 1].avgPricePerMeter));
                 this.priceString.set(this.getPriceText(data[data.length - 1].avgPrice));
+
             }),
             map(data => ({
                 labels: data.map(item => item.addedDate.toString()),
