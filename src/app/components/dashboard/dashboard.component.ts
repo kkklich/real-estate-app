@@ -35,6 +35,7 @@ export class DashboardComponent implements OnInit {
     public realEstateStatisticsKey = realEstateStatisticsKey;
     protected labels: string[] = [];
     protected dataPoints: number[] = [];
+    protected countPoints: number[] = [];
     public isDataLoaded = computed(() =>
         this.calculateStatisticsService.data().data.length > 0
     );
@@ -70,17 +71,18 @@ export class DashboardComponent implements OnInit {
             this.getTimelineData();
         }
     }
-    private getTimelineData(): void {
-        const city = this.calculateStatisticsService.city();
 
-        this.realEstateService.getTimeLinePrice(city).subscribe({
-            next: (data) => {
-                this.labels = data.map(item => item.addedDate.toString());
-                this.dataPoints = data.map(item => item.avgPricePerMeter);
+    private getTimelineData(): void {
+        this.calculateStatisticsService.getTimelineData().subscribe({
+            next: ({ labels, dataPoints, countPoints }) => {
+                this.labels = labels;
+                this.dataPoints = dataPoints;
+                this.countPoints = countPoints;
 
                 if (this.lineChart) {
                     this.lineChart.labels = this.labels;
                     this.lineChart.dataPoints = this.dataPoints;
+                    this.lineChart.countPoints = this.countPoints;
                     this.lineChart.updateChart();
                 }
             }

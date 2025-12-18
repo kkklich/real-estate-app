@@ -12,7 +12,7 @@
 <div class="dashboard-container">
     @if(this.isBrowser){
     <div class="dashboard-grid">
-        <app-line-chart class="line-chart" [labels]="labels" [dataPoints]="dataPoints"
+        <app-line-chart class="line-chart" [labels]="labels" [dataPoints]="dataPoints" [countPoints]="countPoints"
             chartTitle="Timeline Average Prices"></app-line-chart>
 
         <app-info-labels class="info-labels"></app-info-labels>

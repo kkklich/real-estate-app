@@ -14,9 +14,9 @@ export class InfoLabels {
 
     constructor(readonly calculateStatisticsService: CalculateStatisticsService, readonly cdr: ChangeDetectorRef) {
         effect(() => {
-            void this.calculateStatisticsService.data();
-            this.averagePriceMeter = calculateStatisticsService.getInfoText();
-            this.averagePrice = calculateStatisticsService.getPriceText();
+            void this.calculateStatisticsService.city();
+            this.averagePriceMeter = calculateStatisticsService.avgPriceString();
+            this.averagePrice = calculateStatisticsService.priceString();
             cdr.detectChanges();
         });
     }

@@ -6,10 +6,15 @@ import { ChartConfiguration } from "chart.js";
 import { cityEnum } from "../models/enums/city.enum";
 import { BarChartData } from "../models/barChartData";
 import { realEstateStatisticsKey } from "../models/enums/statisticsParameter.enum";
+import { map, Observable, tap } from "rxjs";
 
 @Injectable({ providedIn: 'root' })
 
 export class CalculateStatisticsService implements OnDestroy {
+
+    public avgPriceString = signal<string>('');
+    public priceString = signal<string>('');
+
     public data = signal<PropertydataAPI>({ totalCount: 0, data: [] });
     public groupedBy = signal<string>('market');
     public city = signal<cityEnum>(cityEnum.Krakow);
@@ -263,9 +268,7 @@ export class CalculateStatisticsService implements OnDestroy {
         if (data.length === 0) return 0;
         return data.reduce((acc, x) => acc + x.price, 0) / data.length;
     }
-    public getPriceText(): string {
-        const data = this.data();
-        const price = this.calculateAveragePrice(data.data);
+    public getPriceText(price: number): string {
         return `AVG total price : ${this.convertNumberPrice(price)} PLN`;
     };
 
@@ -280,9 +283,7 @@ export class CalculateStatisticsService implements OnDestroy {
         return data.reduce((acc, x) => acc + x.pricePerMeter, 0) / data.length;
     }
 
-    public getInfoText(): string {
-        const data = this.data();
-        const pricePerMeter = this.calculateAveragePricePerMeter(data.data);
+    public getInfoText(pricePerMeter: number): string {
         return `AVG price per meter: ${this.convertNumberPrice(pricePerMeter)} PLN`;
     };
 
@@ -374,4 +375,19 @@ export class CalculateStatisticsService implements OnDestroy {
                 labels
             };
         });
+
+    public getTimelineData(): Observable<{ labels: string[]; dataPoints: number[]; countPoints: number[]; }> {
+        const city = this.city();
+        return this.realEstateService.getTimeLinePrice(city).pipe(
+            tap(data => {
+                this.avgPriceString.set(this.getInfoText(data[data.length - 1].avgPricePerMeter));
+                this.priceString.set(this.getPriceText(data[data.length - 1].avgPrice));
+            }),
+            map(data => ({
+                labels: data.map(item => item.addedDate.toString()),
+                dataPoints: data.map(item => item.avgPricePerMeter),
+                countPoints: data.map(item => item.count)
+            }))
+        );
+    }
 }
