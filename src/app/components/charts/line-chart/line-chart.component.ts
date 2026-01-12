@@ -67,7 +67,7 @@ export class LineChartComponent implements AfterViewInit, OnDestroy {
                         type: 'linear',
                         display: true,
                         position: 'left',
-                        title: { display: true, text: 'Price' },
+                        title: { display: true, text: 'Quantity' },
                         grid: {
                             drawOnChartArea: false
                         }
@@ -76,7 +76,7 @@ export class LineChartComponent implements AfterViewInit, OnDestroy {
                         type: 'linear',
                         display: true,
                         position: 'right',
-                        title: { display: true, text: 'Quantity' }
+                        title: { display: true, text: 'Price' }
                     }
                 }
             }
