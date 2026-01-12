@@ -8,9 +8,8 @@
         (cityChange)="onCityChange($event)"></app-search-filter>
 </div>
 
-
 <div class="dashboard-container">
-    @if(this.isBrowser){
+    @if(this.isBrowser && calculateStatisticsService.isLoaded) {
     <div class="dashboard-grid">
         <app-line-chart class="line-chart" [labels]="labels" [dataPoints]="dataPoints" [countPoints]="countPoints"
             chartTitle="Timeline Average Prices"></app-line-chart>

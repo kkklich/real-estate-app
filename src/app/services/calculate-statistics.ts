@@ -18,6 +18,8 @@ export class CalculateStatisticsService implements OnDestroy {
     public groupedBy = signal<string>('market');
     public city = signal<cityEnum>(cityEnum.Krakow);
 
+    public isLoaded = false;
+
     public readonly hasData = computed(() => {
         const apiData = this._data();
         return !!apiData && (apiData.data?.length ?? 0) > 0;
@@ -64,10 +66,12 @@ export class CalculateStatisticsService implements OnDestroy {
             next: (data) => {
                 this._data.set(data);
                 this.fetching = false;
+                this.isLoaded = true;
             },
             error: () => {
                 this._data.set(null);
                 this.fetching = false;
+                this.isLoaded = false;
             }
         });
     }
