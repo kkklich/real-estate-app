@@ -44,55 +44,71 @@
     grid-template-rows: auto;
     gap: 24px;
     grid-template-areas:
-        "line-chart line-chart info-labels"
-        "bar-chart-median bar-chart-building-type map"
-        "line line map";
+        "summary summary summary"
+        "trend trend trend"
+        "district histogram map"
+        "market-split building-split map"
+        "insights insights insights";
 }
 
-.bar-chart-median {
-    grid-area: bar-chart-median;
+.summary {
+    grid-area: summary;
     min-width: 0;
 }
 
-.bar-chart-building-type {
-    grid-area: bar-chart-building-type;
+.trend {
+    grid-area: trend;
     min-width: 0;
 }
 
-.info-labels {
-    grid-area: info-labels;
+.district {
+    grid-area: district;
     min-width: 0;
 }
 
-.line-chart {
-    grid-area: line-chart;
+.histogram {
+    grid-area: histogram;
     min-width: 0;
 }
 
-app-scatter-chart {
-    grid-area: scatter;
+.market-split {
+    grid-area: market-split;
     min-width: 0;
 }
 
-app-grouped-chart {
-    grid-area: grouped;
+.building-split {
+    grid-area: building-split;
     min-width: 0;
 }
 
-app-pie-chart {
-    grid-area: pie;
+.market-insights {
+    grid-area: insights;
     min-width: 0;
 }
 
-app-map-view {
+app-map-view,
+.map-placeholder,
+.map-loading,
+.map-error {
     grid-area: map;
-    width: 500px;
+    width: 100%;
+    max-width: 500px;
     height: 500px;
+    justify-self: center;
 }
 
-app-line-chart {
-    grid-area: line;
-    min-width: 0;
+.map-placeholder,
+.map-loading,
+.map-error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    color: #6d748a;
+    background: #fff;
+    border-radius: 14px;
+    box-shadow: 0 4px 24px 0 rgba(80, 106, 139, 0.08);
 }
 
 mat-card {
@@ -114,10 +130,12 @@ mat-card {
     .dashboard-grid {
         grid-template-columns: 1fr 1fr;
         grid-template-areas:
-            "line-chart info-labels"
-            "bar-chart-median bar-chart-building-type"
+            "summary summary"
+            "trend trend"
+            "district histogram"
+            "market-split building-split"
             "map map"
-            "line line";
+            "insights insights";
     }
 }
 
@@ -125,12 +143,14 @@ mat-card {
     .dashboard-grid {
         grid-template-columns: 1fr;
         grid-template-areas:
-            "line-chart"
-            "info-labels"
-            "bar-chart-median"
-            "bar-chart-building-type"
+            "summary"
+            "trend"
+            "district"
+            "histogram"
+            "market-split"
+            "building-split"
             "map"
-            "line";
+            "insights";
         gap: 16px;
     }
 

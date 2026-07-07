@@ -1,0 +1,10 @@
+<mat-card>
+    <div class="card-title">Price per m² distribution</div>
+    @if (bins().length > 0) {
+    <div class="chart-wrapper">
+        <canvas baseChart type="bar" [data]="chartData()" [options]="chartOptions"></canvas>
+    </div>
+    } @else {
+    <div class="chart-empty">No data</div>
+    }
+</mat-card>

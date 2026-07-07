@@ -27,7 +27,7 @@ export class MapViewComponent implements AfterViewInit {
     private readonly mapData = computed(() => {
         const data = this.calculateStatisticsService.getData();
         const groupedBy = this.calculateStatisticsService.groupedBy();
-        const items = data()?.data ?? [];
+        const items = data() ?? [];
 
         return items
             .map(item => {

@@ -1,0 +1,10 @@
+<mat-card>
+    <div class="card-title">{{ chartTitle() }}</div>
+    @if (slices().length > 0) {
+    <div class="chart-wrapper">
+        <canvas baseChart type="doughnut" [data]="chartData()" [options]="chartOptions()"></canvas>
+    </div>
+    } @else {
+    <div class="chart-empty">No data</div>
+    }
+</mat-card>

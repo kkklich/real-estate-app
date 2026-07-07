@@ -1,0 +1,28 @@
+@if (summary(); as s) {
+<div class="summary-tiles">
+    <div class="summary-tile">
+        <span class="tile-value">{{ s.totalOffers | number }}</span>
+        <span class="tile-label">Active offers</span>
+    </div>
+    <div class="summary-tile">
+        <span class="tile-value">{{ s.medianPricePerMeter | number:'1.0-0' }} PLN</span>
+        <span class="tile-label">Median price / m²</span>
+    </div>
+    <div class="summary-tile">
+        <span class="tile-value">{{ s.medianPrice | number:'1.0-0' }} PLN</span>
+        <span class="tile-label">Median total price</span>
+    </div>
+    <div class="summary-tile">
+        <span class="tile-value">{{ s.medianArea | number:'1.0-1' }} m²</span>
+        <span class="tile-label">Median area</span>
+    </div>
+    <div class="summary-tile">
+        <span class="tile-value">{{ s.privateOffersPercent | number:'1.0-1' }}%</span>
+        <span class="tile-label">Private owners</span>
+    </div>
+    <div class="summary-tile">
+        <span class="tile-value">{{ s.lastUpdated || '—' }}</span>
+        <span class="tile-label">Data updated</span>
+    </div>
+</div>
+}

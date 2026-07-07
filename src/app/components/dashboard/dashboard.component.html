@@ -9,18 +9,24 @@
 </div>
 
 <div class="dashboard-container">
-    @if(this.isBrowser && calculateStatisticsService.isLoaded) {
+    @if(this.isBrowser) {
     <div class="dashboard-grid">
-        <app-line-chart class="line-chart" [labels]="labels" [dataPoints]="dataPoints" [countPoints]="countPoints"
-            chartTitle="Timeline Average Prices"></app-line-chart>
+        <app-summary-cards class="summary" [summary]="charts()?.summary ?? null"></app-summary-cards>
 
-        <app-info-labels class="info-labels"></app-info-labels>
+        <app-price-trend-chart class="trend" [timeline]="charts()?.timeline ?? []"></app-price-trend-chart>
 
-        <app-bar-chart class="bar-chart-median" [chartData]="barChartDataMedianPricePerMeter"
-            [chartTitle]="'Median price per square meter: '"></app-bar-chart>
+        <app-district-price-chart class="district"
+            [districts]="charts()?.districtPrices ?? []"></app-district-price-chart>
 
-        <app-bar-chart class="bar-chart-building-type" [chartData]="barChartDataByBuildingType"
-            [chartTitle]="'Number of apartments grouped by:  ' + calculateStatisticsService.groupedBy()"></app-bar-chart>
+        <app-price-histogram-chart class="histogram"
+            [bins]="charts()?.pricePerMeterHistogram ?? []"></app-price-histogram-chart>
+
+        <app-split-donut-chart class="market-split" chartTitle="Primary vs secondary market"
+            [slices]="charts()?.marketSplit ?? []"></app-split-donut-chart>
+
+        <app-split-donut-chart class="building-split" chartTitle="Building types"
+            [slices]="charts()?.buildingTypeSplit ?? []"></app-split-donut-chart>
+
         <!-- ✅ Load map when browser is IDLE (default behavior) -->
         @defer (on idle) {
         <app-map-view class="map-view"></app-map-view>
@@ -40,6 +46,8 @@
             <span>Map unavailable</span>
         </div>
         }
+
+        <app-market-insights class="market-insights"></app-market-insights>
 
     </div>
     }

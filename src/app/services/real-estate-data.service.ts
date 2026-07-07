@@ -3,9 +3,10 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { PropertydataAPI } from '../models/property';
 import { environment } from '../../enviroments/environment';
-import { timelinePriceDto } from '../models/timelinePriceDto';
 import { cityEnum } from '../models/enums/city.enum';
-import { BarChartData } from '../models/barChartData';
+import { MarketInsights } from '../models/marketInsights';
+import { DashboardCharts } from '../models/dashboardCharts';
+import { MapPoint } from '../models/mapPoint';
 
 @Injectable({ providedIn: 'root' })
 export class RealEstateDataService {
@@ -20,15 +21,15 @@ export class RealEstateDataService {
         return this.http.get<PropertydataAPI>(`${this.apiUrl}/loadDataMarkeplaces`);
     }
 
-    getTimeLinePrice(city: cityEnum): Observable<timelinePriceDto[]> {
-        return this.http.get<timelinePriceDto[]>(`${this.apiUrl}/getTimelinePrice/${city}`);
+    getDashboardCharts(city: cityEnum): Observable<DashboardCharts> {
+        return this.http.get<DashboardCharts>(`${this.apiUrl}/getDashboardCharts/${city}`);
     }
 
-    getGroupedStatistics(groupedBy: string, city: cityEnum): Observable<BarChartData> {
-        return this.http.get<BarChartData>(`${this.apiUrl}/getGroupedStatistics/${groupedBy}/${city}`);
+    getMarketInsights(city: cityEnum): Observable<MarketInsights> {
+        return this.http.get<MarketInsights>(`${this.apiUrl}/getMarketInsights/${city}`);
     }
 
-    filterByParameter(groupBy: string, city: cityEnum, parameter: string): Observable<BarChartData> {
-        return this.http.get<BarChartData>(`${this.apiUrl}/filterByParameter/${groupBy}/${city}/${encodeURIComponent(parameter)}`);
+    getMapPoints(city: cityEnum): Observable<MapPoint[]> {
+        return this.http.get<MapPoint[]>(`${this.apiUrl}/getMapPoints/${city}`);
     }
 }

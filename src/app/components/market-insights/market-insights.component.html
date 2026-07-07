@@ -1,0 +1,132 @@
+<mat-card>
+    <div class="card-title">
+        Market insights: {{ calculateStatisticsService.city() }}
+    </div>
+
+    @if (loading()) {
+    <div class="insights-loader">
+        <mat-spinner diameter="30"></mat-spinner>
+        <span>Loading market insights...</span>
+    </div>
+    } @else {
+    @if (insights(); as data) {
+
+    <div class="stat-tiles">
+        <div class="stat-tile">
+            <span class="stat-value">{{ data.totalOffers | number }}</span>
+            <span class="stat-label">Active offers</span>
+        </div>
+        <div class="stat-tile">
+            <span class="stat-value">{{ data.medianPricePerMeter | number:'1.0-0' }} PLN</span>
+            <span class="stat-label">Median price / m²</span>
+        </div>
+        <div class="stat-tile">
+            <span class="stat-value">{{ data.medianPrice | number:'1.0-0' }} PLN</span>
+            <span class="stat-label">Median total price</span>
+        </div>
+        <div class="stat-tile">
+            <span class="stat-value">{{ data.medianArea | number:'1.0-1' }} m²</span>
+            <span class="stat-label">Median area</span>
+        </div>
+        <div class="stat-tile">
+            <span class="stat-value">{{ data.privateOffersPercent | number:'1.0-1' }}%</span>
+            <span class="stat-label">Private owners</span>
+        </div>
+    </div>
+
+    <div class="insights-columns">
+        <div class="insights-section">
+            <div class="section-title">
+                <mat-icon>storefront</mat-icon>
+                Offers by portal
+            </div>
+            <ul class="source-list">
+                @for (source of data.offersBySource; track source.source) {
+                <li>
+                    <span class="source-name">{{ source.source }}</span>
+                    <span class="source-count">{{ source.count | number }}</span>
+                </li>
+                }
+            </ul>
+        </div>
+
+        <div class="insights-section">
+            <div class="section-title">
+                <mat-icon>trending_down</mat-icon>
+                Cheapest districts (PLN/m²)
+            </div>
+            <ul class="district-list">
+                @for (district of cheapestDistricts(); track district.district) {
+                <li>
+                    <span class="district-name">{{ district.district }}</span>
+                    <span class="district-price cheap">{{ district.medianPricePerMeter | number:'1.0-0' }}</span>
+                </li>
+                }
+            </ul>
+        </div>
+
+        <div class="insights-section">
+            <div class="section-title">
+                <mat-icon>trending_up</mat-icon>
+                Most expensive districts (PLN/m²)
+            </div>
+            <ul class="district-list">
+                @for (district of priciestDistricts(); track district.district) {
+                <li>
+                    <span class="district-name">{{ district.district }}</span>
+                    <span class="district-price expensive">{{ district.medianPricePerMeter | number:'1.0-0' }}</span>
+                </li>
+                }
+            </ul>
+        </div>
+    </div>
+
+    @if (data.bestDeals.length > 0) {
+    <div class="section-title deals-title">
+        <mat-icon>local_offer</mat-icon>
+        Best deals — priced below the district median
+    </div>
+    <div class="deals-table-wrapper">
+        <table class="deals-table">
+            <thead>
+                <tr>
+                    <th>Offer</th>
+                    <th>District</th>
+                    <th class="num">Area</th>
+                    <th class="num">Price</th>
+                    <th class="num">Price / m²</th>
+                    <th class="num">District median</th>
+                    <th class="num">Below median</th>
+                    <th>Source</th>
+                </tr>
+            </thead>
+            <tbody>
+                @for (deal of data.bestDeals; track deal.url) {
+                <tr>
+                    <td class="deal-title">
+                        <a [href]="deal.url" target="_blank" rel="noopener noreferrer">{{ deal.title }}</a>
+                    </td>
+                    <td>{{ deal.district }}</td>
+                    <td class="num">{{ deal.area | number:'1.0-1' }} m²</td>
+                    <td class="num">{{ deal.price | number:'1.0-0' }} PLN</td>
+                    <td class="num">{{ deal.pricePerMeter | number:'1.0-0' }} PLN</td>
+                    <td class="num">{{ deal.districtMedianPricePerMeter | number:'1.0-0' }} PLN</td>
+                    <td class="num">
+                        <span class="discount-badge">-{{ deal.belowMedianPercent | number:'1.0-1' }}%</span>
+                    </td>
+                    <td>{{ deal.source }}</td>
+                </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    }
+
+    } @else {
+    <div class="insights-loader">
+        <mat-icon>error_outline</mat-icon>
+        <span>Market insights unavailable</span>
+    </div>
+    }
+    }
+</mat-card>

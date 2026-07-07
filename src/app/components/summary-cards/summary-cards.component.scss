@@ -1,0 +1,33 @@
+.summary-tiles {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 14px;
+}
+
+.summary-tile {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 16px 18px;
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: 0 4px 24px 0 rgba(80, 106, 139, 0.08);
+
+    .tile-value {
+        font-size: 1.35rem;
+        font-weight: 700;
+        color: #234392;
+    }
+
+    .tile-label {
+        font-size: 0.82rem;
+        color: #6d748a;
+    }
+}
+
+@media (max-width: 700px) {
+    .summary-tiles {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+}

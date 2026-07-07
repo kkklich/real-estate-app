@@ -1,0 +1,27 @@
+mat-card {
+    border-radius: 14px;
+    box-shadow: 0 4px 24px 0 rgba(80, 106, 139, 0.08);
+    border: none;
+    padding: 20px 22px 18px 22px;
+}
+
+.card-title {
+    font-size: 1.17rem;
+    font-weight: 600;
+    color: #22294a;
+    margin-bottom: 18px;
+    letter-spacing: 0.01em;
+}
+
+.chart-wrapper {
+    position: relative;
+    height: 240px;
+}
+
+.chart-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 240px;
+    color: #6d748a;
+}

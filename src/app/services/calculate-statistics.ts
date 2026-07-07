@@ -1,41 +1,25 @@
-import { Injectable, signal, computed, OnDestroy, effect, untracked, Signal } from "@angular/core";
+import { Injectable, signal, computed, effect, untracked, Signal } from "@angular/core";
 import { RealEstateDataService } from './real-estate-data.service';
-import { PropertydataAPI } from "../models/property";
 import { cityEnum } from "../models/enums/city.enum";
-import { BarChartData } from "../models/barChartData";
-import { realEstateStatisticsKey } from "../models/enums/statisticsParameter.enum";
-import { map, Observable, tap } from "rxjs";
+import { DashboardCharts } from "../models/dashboardCharts";
+import { MapPoint } from "../models/mapPoint";
 
 @Injectable({ providedIn: 'root' })
 
-export class CalculateStatisticsService implements OnDestroy {
+export class CalculateStatisticsService {
 
-    public avgPriceString = signal<string>('');
-    public priceString = signal<string>('');
-
-    private readonly _data = signal<PropertydataAPI | null>(null);
+    // slim map points - only the map consumes them, loaded in the background
+    private readonly _data = signal<MapPoint[] | null>(null);
     public readonly data = computed(() => this._data());
+
+    // compact pre-aggregated charts payload - the dashboard renders from this
+    private readonly _charts = signal<DashboardCharts | null>(null);
+    public readonly charts = computed(() => this._charts());
+
     public groupedBy = signal<string>('market');
     public city = signal<cityEnum>(cityEnum.Krakow);
 
-    public isLoaded = false;
-
-    public readonly hasData = computed(() => {
-        const apiData = this._data();
-        return !!apiData && (apiData.data?.length ?? 0) > 0;
-    });
-
-    private _barChartData = signal<BarChartData>({
-        labels: [],
-        datasets: [{ data: [], label: 'Liczba ofert' }]
-    });
-    public barChartDataByBuildingType = computed(() => this._barChartData());
-
-    private _barChartFiltered = signal<BarChartData>({
-        labels: [],
-        datasets: [{ data: [], label: 'Liczba ofert' }]
-    });
-    public barChartFiltered = computed(() => this._barChartFiltered());
+    public readonly hasData = computed(() => this._charts() !== null);
 
     public groupByTypes: string[] = [
         'price',
@@ -47,124 +31,43 @@ export class CalculateStatisticsService implements OnDestroy {
         'private',
         'location.district'
     ];
-    private intervalId?: number;
-    private fetching = false;
 
     constructor(private readonly realEstateService: RealEstateDataService) {
         this.setupSignalListener();
     }
 
-    ngOnDestroy(): void {
-        if (this.intervalId) clearInterval(this.intervalId);
-    }
-
-    private fetchData(city: cityEnum) {
-        if (this.fetching) return;
-        this.fetching = true;
-
-        this.realEstateService.getDashboardData(city).subscribe({
-            next: (data) => {
-                this._data.set(data);
-                this.fetching = false;
-                this.isLoaded = true;
-            },
-            error: () => {
-                this._data.set(null);
-                this.fetching = false;
-                this.isLoaded = false;
-            }
-        });
-    }
-
-    getData(): Signal<PropertydataAPI | null> {
-        return this.data;
-    }
-
     private setupSignalListener(): void {
-        //  Effect 1: ONLY city changes → fetchData
         effect(() => {
-            const city = this.city();  // Track ONLY city
-            untracked(() => this.fetchData(city));
-        });
-
-        //  Effect 2: city + group changes → bar charts
-        effect(() => {
-            const city = this.city();    // Track city
-            const group = this.groupedBy();  // Track group
+            const city = this.city();
             untracked(() => {
-                this.fetchBarChartData();
-                this.filterByParameter();
+                this.fetchCharts(city);
+                this.fetchData(city);
             });
         });
     }
 
-    private fetchBarChartData(): void {
-        const group = this.groupedBy();
-        const city = this.city();
-
-        this.realEstateService.getGroupedStatistics(group, city).subscribe({
-            next: data => {
-                this._barChartData.set(data)
-            },
+    private fetchCharts(city: cityEnum): void {
+        this.realEstateService.getDashboardCharts(city).subscribe({
+            next: charts => this._charts.set(charts),
             error: err => {
-                console.error('getGroupedStatistics error', err);
-                this._barChartData.set({
-                    labels: [],
-                    datasets: [{ data: [], label: 'Liczba ofert' }]
-                });
+                console.error('getDashboardCharts error', err);
+                this._charts.set(null);
             }
         });
     }
 
-    private filterByParameter(): void {
-        const parameter = realEstateStatisticsKey.MedianPricePerMeter;
-        const group = this.groupedBy();
-        const city = this.city();
-
-        this.realEstateService.filterByParameter(group, city, parameter).subscribe({
-            next: data => this._barChartFiltered.set(data),
-            error: () => {
-                this._barChartFiltered.set({
-                    labels: [],
-                    datasets: [{ data: [], label: 'Liczba ofert' }]
-                });
-            }
+    private fetchData(city: cityEnum) {
+        this.realEstateService.getMapPoints(city).subscribe({
+            next: (data) => this._data.set(data),
+            error: () => this._data.set(null)
         });
-    };
+    }
+
+    getData(): Signal<MapPoint[] | null> {
+        return this.data;
+    }
 
     public getNested(obj: any, path: string): any {
         return path.split('.').reduce((acc, part) => (acc ? acc[part] : undefined), obj);
-    }
-
-
-    private convertNumberPrice(price: number): string {
-        return price
-            .toFixed(2)
-            .replace(/\B(?=(\d{3})+(?!\d))/g, " ");
-    }
-
-    private getPriceText(price: number): string {
-        return `AVG total price : ${this.convertNumberPrice(price)} PLN`;
-    };
-
-    private getInfoText(pricePerMeter: number): string {
-        return `AVG price per meter: ${this.convertNumberPrice(pricePerMeter)} PLN`;
-    };
-
-
-    public getTimelineData(): Observable<{ labels: string[]; dataPoints: number[]; countPoints: number[]; }> {
-        const city = this.city();
-        return this.realEstateService.getTimeLinePrice(city).pipe(
-            tap(data => {
-                this.avgPriceString.set(this.getInfoText(data[data.length - 1].avgPricePerMeter));
-                this.priceString.set(this.getPriceText(data[data.length - 1].avgPrice));
-
-            }),
-            map(data => ({
-                labels: data.map(item => item.addedDate.toString()),
-                dataPoints: data.map(item => item.avgPricePerMeter),
-                countPoints: data.map(item => item.count)
-            }))
-        );
     }
 }
