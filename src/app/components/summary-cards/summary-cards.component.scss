@@ -27,7 +27,34 @@
 
 @media (max-width: 700px) {
     .summary-tiles {
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: repeat(3, 1fr);
         gap: 10px;
+    }
+
+    .summary-tile {
+        padding: 12px 14px;
+
+        .tile-value {
+            font-size: 1.1rem;
+        }
+    }
+}
+
+@media (max-width: 480px) {
+    .summary-tiles {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+    }
+
+    .summary-tile {
+        padding: 10px 12px;
+
+        .tile-value {
+            font-size: 1rem;
+        }
+
+        .tile-label {
+            font-size: 0.75rem;
+        }
     }
 }

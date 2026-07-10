@@ -121,6 +121,7 @@ mat-card {
 
 .deals-table-wrapper {
     overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
 }
 
 .deals-table {
@@ -196,5 +197,41 @@ mat-card {
     .insights-columns {
         grid-template-columns: 1fr;
         gap: 16px;
+    }
+
+    .deals-table th,
+    .deals-table td {
+        padding: 7px 8px;
+        font-size: 0.8rem;
+    }
+
+    .deals-table .deal-title {
+        max-width: 140px;
+    }
+
+    .deals-table .col-area,
+    .deals-table .col-floor {
+        display: none;
+    }
+}
+
+@media (max-width: 480px) {
+    .stat-tiles {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .deals-table th,
+    .deals-table td {
+        padding: 6px 6px;
+        font-size: 0.75rem;
+    }
+
+    .deals-table .deal-title {
+        max-width: 100px;
+    }
+
+    .deals-table .col-median,
+    .deals-table .col-source {
+        display: none;
     }
 }

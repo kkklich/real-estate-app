@@ -2,7 +2,6 @@ export interface Property {
     id: number;
     url: string;
     title: string;
-    createdTime: string;
     price: number;
     pricePerMeter: number;
     floor: number;
@@ -16,7 +15,6 @@ export interface Property {
         city: string;
         district: string;
     };
-    photos: any[];
 }
 
 export interface PropertydataAPI {

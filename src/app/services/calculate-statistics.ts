@@ -1,20 +1,22 @@
-import { Injectable, signal, computed, effect, untracked, Signal } from "@angular/core";
+import { Injectable, signal, computed, effect, untracked } from "@angular/core";
 import { RealEstateDataService } from './real-estate-data.service';
 import { cityEnum } from "../models/enums/city.enum";
 import { DashboardCharts } from "../models/dashboardCharts";
 import { MapPoint } from "../models/mapPoint";
+import { MarketInsights } from "../models/marketInsights";
 
 @Injectable({ providedIn: 'root' })
 
 export class CalculateStatisticsService {
 
-    // slim map points - only the map consumes them, loaded in the background
-    private readonly _data = signal<MapPoint[] | null>(null);
-    public readonly data = computed(() => this._data());
-
-    // compact pre-aggregated charts payload - the dashboard renders from this
     private readonly _charts = signal<DashboardCharts | null>(null);
     public readonly charts = computed(() => this._charts());
+
+    private readonly _insights = signal<MarketInsights | null>(null);
+    public readonly insights = computed(() => this._insights());
+
+    private readonly _mapPoints = signal<MapPoint[] | null>(null);
+    public readonly mapPoints = computed(() => this._mapPoints());
 
     public groupedBy = signal<string>('market');
     public city = signal<cityEnum>(cityEnum.Krakow);
@@ -39,32 +41,28 @@ export class CalculateStatisticsService {
     private setupSignalListener(): void {
         effect(() => {
             const city = this.city();
-            untracked(() => {
-                this.fetchCharts(city);
-                this.fetchData(city);
-            });
+            untracked(() => this.fetchFullDashboard(city));
         });
     }
 
-    private fetchCharts(city: cityEnum): void {
-        this.realEstateService.getDashboardCharts(city).subscribe({
-            next: charts => this._charts.set(charts),
+    private fetchFullDashboard(city: cityEnum): void {
+        this.realEstateService.getFullDashboard(city).subscribe({
+            next: data => {
+                this._charts.set(data.charts);
+                this._insights.set(data.insights);
+                this._mapPoints.set(data.mapPoints);
+            },
             error: err => {
-                console.error('getDashboardCharts error', err);
+                console.error('getFullDashboard error', err);
                 this._charts.set(null);
+                this._insights.set(null);
+                this._mapPoints.set(null);
             }
         });
     }
 
-    private fetchData(city: cityEnum) {
-        this.realEstateService.getMapPoints(city).subscribe({
-            next: (data) => this._data.set(data),
-            error: () => this._data.set(null)
-        });
-    }
-
-    getData(): Signal<MapPoint[] | null> {
-        return this.data;
+    public getData(): MapPoint[] | null {
+        return this._mapPoints();
     }
 
     public getNested(obj: any, path: string): any {

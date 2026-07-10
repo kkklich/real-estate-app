@@ -10,6 +10,8 @@ export interface MapPoint {
     buildingType: string;
     area: number;
     private: boolean;
+    /** server-computed price-per-meter gradient; the map recomputes colors per group-by, this is the fallback */
+    color: string;
     location: {
         lat: number;
         lon: number;

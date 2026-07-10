@@ -25,3 +25,23 @@ mat-card {
     height: 240px;
     color: #6d748a;
 }
+
+@media (max-width: 700px) {
+    .chart-wrapper {
+        height: 200px;
+    }
+
+    .chart-empty {
+        height: 200px;
+    }
+}
+
+@media (max-width: 480px) {
+    .chart-wrapper {
+        height: 180px;
+    }
+
+    .chart-empty {
+        height: 180px;
+    }
+}
