@@ -1,0 +1,118 @@
+<div class="property-list">
+    <h1 class="page-title">Properties</h1>
+
+    <div class="filters">
+        <mat-form-field appearance="outline">
+            <mat-label>City</mat-label>
+            <mat-select panelClass="select-panel" [ngModel]="city()" (ngModelChange)="city.set($event)">
+                <mat-option value="">All</mat-option>
+                @for (c of cityList; track c) {
+                <mat-option [value]="c">{{ c }}</mat-option>
+                }
+            </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+            <mat-label>Market</mat-label>
+            <mat-select panelClass="select-panel" [ngModel]="market()" (ngModelChange)="market.set($event)">
+                <mat-option value="">All</mat-option>
+                <mat-option value="primary">Primary</mat-option>
+                <mat-option value="secondary">Secondary</mat-option>
+            </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+            <mat-label>Search</mat-label>
+            <input matInput type="text" [ngModel]="search()" (ngModelChange)="search.set($event)"
+                placeholder="Title, district…">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="num">
+            <mat-label>Price min</mat-label>
+            <input matInput type="number" [ngModel]="priceMin()" (ngModelChange)="priceMin.set($event)">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="num">
+            <mat-label>Price max</mat-label>
+            <input matInput type="number" [ngModel]="priceMax()" (ngModelChange)="priceMax.set($event)">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="num">
+            <mat-label>Area min</mat-label>
+            <input matInput type="number" [ngModel]="areaMin()" (ngModelChange)="areaMin.set($event)">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="num">
+            <mat-label>Area max</mat-label>
+            <input matInput type="number" [ngModel]="areaMax()" (ngModelChange)="areaMax.set($event)">
+        </mat-form-field>
+
+        <button mat-flat-button color="primary" class="apply-btn" (click)="applyFilters()">Apply</button>
+    </div>
+
+    @if (loading()) {
+    <div class="state-box">
+        <mat-spinner diameter="42"></mat-spinner>
+    </div>
+    } @else if (error()) {
+    <div class="state-box error">{{ error() }}</div>
+    } @else if (result()) {
+    @if (result(); as res) {
+    @if (res.items.length === 0) {
+    <div class="state-box">No properties match the current filters.</div>
+    } @else {
+    <div class="table-wrapper">
+        <table class="results">
+            <thead>
+                <tr>
+                    @for (col of columns; track col.key) {
+                    <th (click)="sortByColumn(col.key)" class="sortable">
+                        {{ col.label }}
+                        @if (sortBy() === col.key) {
+                        <span class="sort-arrow">{{ sortDir() === 'asc' ? '▲' : '▼' }}</span>
+                        }
+                    </th>
+                    }
+                    <th>Change</th>
+                    <th>Snapshots</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @for (row of res.items; track row.id) {
+                <tr>
+                    <td class="title-cell">{{ row.title }}</td>
+                    <td>{{ row.city }}</td>
+                    <td>{{ row.district }}</td>
+                    <td>{{ row.market }}</td>
+                    <td>{{ row.price | number:'1.0-2' }} zł</td>
+                    <td>{{ row.pricePerMeter | number:'1.0-2' }} zł</td>
+                    <td>{{ row.area | number:'1.0-1' }} m²</td>
+                    <td>{{ row.floor }}</td>
+                    <td>
+                        @if (row.priceChange) {
+                        <span class="delta" [class.down]="row.priceChange < 0" [class.up]="row.priceChange > 0">
+                            {{ row.priceChange < 0 ? '▼' : '▲' }} {{ (row.priceChange | number:'1.0-2') }} zł
+                        </span>
+                        } @else {
+                        <span class="delta flat">—</span>
+                        }
+                    </td>
+                    <td class="center">{{ row.snapshotCount }}</td>
+                    <td>
+                        <a mat-stroked-button color="primary" routerLink="/properties/history"
+                            [queryParams]="{ city: row.city, url: row.url }">History</a>
+                    </td>
+                </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <mat-paginator [length]="res.totalCount" [pageSize]="pageSize()" [pageIndex]="pageIndex()"
+        [pageSizeOptions]="pageSizeOptions" (page)="onPage($event)" showFirstLastButtons>
+    </mat-paginator>
+    }
+    }
+    }
+</div>

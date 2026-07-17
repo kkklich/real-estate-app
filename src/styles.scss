@@ -1,5 +1,19 @@
 @import '@angular/material/prebuilt-themes/indigo-pink.css';
 
+/* top navigation toolbar */
+.app-nav {
+    gap: 8px;
+}
+
+.app-nav__brand {
+    font-weight: 600;
+    margin-right: 16px;
+}
+
+.app-nav a.active {
+    background-color: rgba(255, 255, 255, 0.18);
+}
+
 /* style the overlay panel (overlay is outside component, so styles must be global) */
 .select-panel.mat-mdc-select-panel,
 .select-panel {

@@ -1,1 +1,7 @@
-<app-dashboard></app-dashboard>
+<mat-toolbar color="primary" class="app-nav">
+    <span class="app-nav__brand">Real Estate</span>
+    <a mat-button routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Dashboard</a>
+    <a mat-button routerLink="/properties" routerLinkActive="active">Properties</a>
+</mat-toolbar>
+
+<router-outlet></router-outlet>

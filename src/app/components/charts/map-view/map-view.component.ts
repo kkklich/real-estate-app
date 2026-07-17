@@ -4,6 +4,7 @@ import { CalculateStatisticsService } from '../../../services/calculate-statisti
 import * as GeoJSON from 'geojson';
 import { getCityCenter } from '../../../models/enums/city.enum';
 import { MapPoint } from '../../../models/mapPoint';
+import { environment } from '../../../../enviroments/environment';
 
 @Component({
     selector: 'app-map-view',
@@ -15,7 +16,7 @@ export class MapViewComponent implements OnDestroy {
 
     private mapInstance?: maplibregl.Map;
     private mapInitialized = false;
-    private readonly LIGHT_STYLE = `https://api.maptiler.com/maps/streets-v2/style.json?key=fE7HmfEfHzBPNM7hOEzA`;
+    private readonly LIGHT_STYLE = `https://api.maptiler.com/maps/streets-v2/style.json?key=${environment.maptilerKey}`;
 
     constructor(readonly calculateStatisticsService: CalculateStatisticsService) {
         this.setupMapEffect();

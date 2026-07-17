@@ -1,0 +1,177 @@
+<div class="property-history">
+    @if (loading()) {
+    <div class="state-box">
+        <mat-spinner diameter="42"></mat-spinner>
+    </div>
+    } @else if (error()) {
+    <div class="state-box error">{{ error() }}</div>
+    } @else if (history()) {
+    @if (history(); as h) {
+    <mat-card class="header-card">
+        <div class="header-main">
+            <h1 class="offer-title">{{ h.title }}</h1>
+            <div class="offer-meta">
+                <span>{{ h.city }}</span>
+                @if (h.district) { <span>· {{ h.district }}</span> }
+                @if (h.area) { <span>· {{ h.area | number:'1.0-1' }} m²</span> }
+                <span>· {{ portalName(h.webName) }}</span>
+            </div>
+        </div>
+        <a mat-stroked-button color="primary" [href]="h.url" target="_blank" rel="noopener">
+            Open original offer
+        </a>
+    </mat-card>
+
+    <mat-card class="details-card">
+        <div class="card-title">Offer details</div>
+        <dl class="details-grid">
+            <div class="detail">
+                <dt>Current price</dt>
+                <dd class="strong">{{ h.price | number:'1.0-2' }} zł</dd>
+            </div>
+            <div class="detail">
+                <dt>Price / m²</dt>
+                <dd>{{ h.pricePerMeter | number:'1.0-2' }} zł</dd>
+            </div>
+            <div class="detail">
+                <dt>Area</dt>
+                <dd>{{ h.area | number:'1.0-2' }} m²</dd>
+            </div>
+            <div class="detail">
+                <dt>Floor</dt>
+                <dd>{{ h.floor }}</dd>
+            </div>
+            <div class="detail">
+                <dt>Market</dt>
+                <dd>{{ h.market || '—' }}</dd>
+            </div>
+            <div class="detail">
+                <dt>Building type</dt>
+                <dd>{{ h.buildingType || '—' }}</dd>
+            </div>
+            <div class="detail">
+                <dt>Owner</dt>
+                <dd>{{ ownerLabel(h.private) }}</dd>
+            </div>
+            <div class="detail">
+                <dt>Portal</dt>
+                <dd>{{ portalName(h.webName) }}</dd>
+            </div>
+            <div class="detail">
+                <dt>City</dt>
+                <dd>{{ h.city }}</dd>
+            </div>
+            <div class="detail">
+                <dt>District</dt>
+                <dd>{{ h.district || '—' }}</dd>
+            </div>
+            <div class="detail">
+                <dt>Coordinates</dt>
+                <dd>
+                    @if (h.lat || h.lon) {
+                    <a [href]="'https://www.openstreetmap.org/?mlat=' + h.lat + '&mlon=' + h.lon + '#map=17/' + h.lat + '/' + h.lon"
+                        target="_blank" rel="noopener">
+                        {{ h.lat | number:'1.0-5' }}, {{ h.lon | number:'1.0-5' }}
+                    </a>
+                    } @else { — }
+                </dd>
+            </div>
+            <div class="detail">
+                <dt>Source offer ID</dt>
+                <dd>{{ h.offertId || '—' }}</dd>
+            </div>
+            <div class="detail">
+                <dt>Created on source</dt>
+                <dd>{{ h.createdTime | date:'dd.MM.yyyy HH:mm' }}</dd>
+            </div>
+            <div class="detail">
+                <dt>First seen</dt>
+                <dd>{{ h.firstSeen | date:'dd.MM.yyyy HH:mm' }}</dd>
+            </div>
+            <div class="detail">
+                <dt>Last seen</dt>
+                <dd>{{ h.lastSeen | date:'dd.MM.yyyy HH:mm' }}</dd>
+            </div>
+            <div class="detail">
+                <dt>Snapshots</dt>
+                <dd>{{ h.snapshotCount }}</dd>
+            </div>
+            <div class="detail">
+                <dt>First price</dt>
+                <dd>{{ h.firstPrice | number:'1.0-2' }} zł</dd>
+            </div>
+            <div class="detail">
+                <dt>Total change</dt>
+                <dd>
+                    @if (h.totalPriceChange) {
+                    <span class="delta" [class.down]="h.totalPriceChange < 0" [class.up]="h.totalPriceChange > 0">
+                        {{ h.totalPriceChange < 0 ? '▼' : '▲' }} {{ (h.totalPriceChange | number:'1.0-2') }} zł
+                    </span>
+                    } @else {
+                    <span class="delta flat">—</span>
+                    }
+                </dd>
+            </div>
+        </dl>
+
+        @if (h.description) {
+        <div class="detail-description">
+            <dt>Description</dt>
+            <p>{{ h.description }}</p>
+        </div>
+        }
+    </mat-card>
+
+    <mat-card class="chart-card">
+        <div class="card-title">Price history</div>
+        @if (h.entries.length > 0) {
+        <div class="chart-wrapper">
+            <canvas baseChart type="line" [data]="chartData()" [options]="chartOptions"></canvas>
+        </div>
+        } @else {
+        <div class="chart-empty">No history entries yet</div>
+        }
+    </mat-card>
+
+    @if (h.entries.length > 0) {
+    <mat-card class="table-card">
+        <div class="card-title">Snapshots</div>
+        <div class="table-wrapper">
+            <table class="results">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Price</th>
+                        <th>Price / m²</th>
+                        <th>Portal</th>
+                        <th>Change</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (e of h.entries; track e.date + e.url) {
+                    <tr>
+                        <td>{{ e.date | date:'dd.MM.yyyy HH:mm' }}</td>
+                        <td>{{ e.price | number:'1.0-2' }} zł</td>
+                        <td>{{ e.pricePerMeter | number:'1.0-2' }} zł</td>
+                        <td>{{ portalName(e.webName) }}</td>
+                        <td>
+                            @if (e.priceChange) {
+                            <span class="delta" [class.down]="e.priceChange < 0" [class.up]="e.priceChange > 0">
+                                {{ e.priceChange < 0 ? '▼' : '▲' }} {{ (e.priceChange | number:'1.0-2') }} zł
+                            </span>
+                            } @else {
+                            <span class="delta flat">—</span>
+                            }
+                        </td>
+                    </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </mat-card>
+    }
+    }
+    } @else {
+    <div class="state-box">No history to display.</div>
+    }
+</div>
