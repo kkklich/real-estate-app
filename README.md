@@ -1,59 +1,118 @@
-# RealEstateApp
+# real-estate-app
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 20.1.0.
+The dashboard of the Real Estate App: price statistics, distribution and trend
+charts, a map of offers and a browsable, filterable list of listings scraped
+from Polish property portals.
 
-## Development server
+Angular 20 (standalone, **zoneless**, signal-based) · Angular Material ·
+Chart.js · MapLibre GL · SSR
 
-To start a local development server, run:
-
-```bash
-ng serve
-```
-
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
-
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+## Running it
 
 ```bash
-ng generate component component-name
+npm install
+npm start
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+Opens on **http://localhost:4200** and expects the API on
+**http://localhost:5016** (`src/enviroments/environment.ts`). Without the API
+running, the dashboard loads empty and logs `getFullDashboard error`.
 
-```bash
-ng generate --help
-```
+> If the build dies with a JavaScript heap error, cap the workers first:
+> `$env:NG_BUILD_MAX_WORKERS=1` (PowerShell) — parallel workers exhaust memory
+> on this project.
 
 ## Building
 
-To build the project run:
-
 ```bash
-ng build
+npm run build
 ```
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+`outputMode` is `"server"`, so this emits a **Node SSR server**, not a static
+folder:
 
-## Running unit tests
-
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
-
-```bash
-ng test
+```
+dist/real-estate-app/
+  browser/                 client bundles
+  server/server.mjs        run this — `npm run serve:ssr:real-estate-app`
 ```
 
-## Running end-to-end tests
+Uploading `browser/` over FTP is not enough. There is a separate `static`
+configuration if you need a plain-file deployment; it trades away SSR.
 
-For end-to-end (e2e) testing, run:
+Production builds use `baseHref: /realestate/` — the app expects to be served
+from a subpath, not the domain root. Override per build with `--base-href`.
 
-```bash
-ng e2e
+## Screens
+
+| Route | What |
+|---|---|
+| `/` | dashboard — summary cards, price trend, price/m² histogram, district medians, market & building-type donuts, map, market insights |
+| `/properties` | every distinct offer: filter, sort, page |
+| `/properties/history` | price history of one offer across scrapes |
+
+The toolbar switches city (Kraków / Katowice). That is the main input the whole
+dashboard reacts to.
+
+## How the state works
+
+One service, one signal graph — no NgRx, no RxJS state.
+
+```
+city signal ──effect──► getFullDashboard(city) ──┬─► charts    ─► chart components
+                                                 ├─► insights  ─► market insights
+                                                 └─► mapPoints ─► map
 ```
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+[`CalculateStatisticsService`](src/app/services/calculate-statistics.ts) holds
+the city and the three response slices. Changing the city sets one signal; an
+`effect` fires the request — wrapped in `untracked()` so it depends on `city`
+alone — and components read `computed()` projections. Nothing writes back to
+the store.
 
-## Additional Resources
+The whole dashboard is **one HTTP call** (`getFullDashboard/{city}`), cached per
+city in [`RealEstateDataService`](src/app/services/real-estate-data.service.ts)
+with `shareReplay`, so revisiting a city replays instantly. A failed request
+drops its cache entry so the next visit retries instead of replaying the error.
 
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+`/properties` is independent: it owns its filter, sort and paging signals and
+calls [`PropertyListService`](src/app/services/property-list.service.ts)
+directly.
+
+## Layout
+
+```
+src/app/
+  components/
+    dashboard/           the page that composes everything
+    search-filter/       city + group-by toolbar
+    summary-cards/       medians and counts
+    market-insights/     ranges, source split, best deals
+    charts/              price-trend · price-histogram · district-price ·
+                         split-donut · map-view
+    properties/          properties-list · property-history
+  models/                the API response shapes
+  services/              the three services above
+  enviroments/           apiUrl and the MapTiler key
+```
+
+## Things worth knowing
+
+- **Zoneless.** `provideZonelessChangeDetection()` — state must go through
+  signals. A plain field mutation will not repaint.
+- **SSR guards.** The map uses WebGL and cannot render on the server;
+  `map-view` is behind `isPlatformBrowser`. Anything touching `window`,
+  `document` or a canvas needs the same treatment.
+- **Locale is `pl`**, registered globally, so prices and dates format Polish
+  regardless of the browser.
+- **The MapTiler key in `environment.ts` is public** — it ships in the client
+  bundle by necessity. Restrict it by HTTP referrer in the MapTiler console
+  rather than trying to hide it.
+- **Map colours come from the API**, not the client: `BuildMapPoints`
+  colour-grades points blue→red by price per m².
+
+## More
+
+The API contract and the data model it reflects — snapshots, batch semantics,
+duplicate detection, caching — are documented in `ARCHITECTURE.md` in the parent
+workspace (`realEstateApp/`), next to `DEPLOYMENT.md`.
