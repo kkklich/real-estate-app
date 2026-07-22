@@ -3,6 +3,7 @@ import { CalculateStatisticsService } from '../../services/calculate-statistics'
 import { SearchFilterComponent } from "../search-filter/search-filter-component";
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatIconModule } from '@angular/material/icon';
+import { MatButtonModule } from '@angular/material/button';
 import { MapViewComponent } from "../charts/map-view/map-view.component";
 import { isPlatformBrowser } from '@angular/common';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -20,6 +21,7 @@ import { SplitDonutChartComponent } from '../charts/split-donut-chart/split-donu
         SearchFilterComponent,
         MatToolbarModule,
         MatIconModule,
+        MatButtonModule,
         MapViewComponent,
         MatProgressSpinnerModule,
         MarketInsightsComponent,

@@ -42,12 +42,14 @@ export class PriceHistogramChartComponent {
         scales: {
             x: {
                 grid: { display: false },
-                ticks: { color: '#6d748a', maxRotation: 60, minRotation: 45 }
+                ticks: { color: '#6d748a', maxRotation: 60, minRotation: 45 },
+                title: { display: true, text: 'PLN / m²', color: '#6d748a' }
             },
             y: {
                 beginAtZero: true,
                 grid: { color: '#e9ecf6' },
-                ticks: { color: '#6d748a' }
+                ticks: { color: '#6d748a' },
+                title: { display: true, text: 'offers', color: '#6d748a' }
             }
         }
     };

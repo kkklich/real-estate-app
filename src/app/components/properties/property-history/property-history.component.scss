@@ -154,6 +154,16 @@ table.results {
     }
 }
 
+.offer-link {
+    color: #234392;
+    font-weight: 600;
+    text-decoration: none;
+
+    &:hover {
+        text-decoration: underline;
+    }
+}
+
 .delta {
     font-weight: 600;
 

@@ -27,15 +27,16 @@
         <app-split-donut-chart class="building-split" chartTitle="Building types"
             [slices]="charts()?.buildingTypeSplit ?? []"></app-split-donut-chart>
 
-        <!-- ✅ Load map when browser is IDLE (default behavior) -->
-        @defer (on idle) {
+        <!-- maplibre-gl + WebGL are heavy - the map is only downloaded once the user asks for it -->
+        @defer (on interaction(openMapBtn)) {
         <app-map-view class="map-view"></app-map-view>
         } @placeholder {
         <div class="map-placeholder">
             <mat-icon>map</mat-icon>
-            <span>🗺️ Map loads when ready</span>
+            <span>See all offers on the map</span>
+            <button #openMapBtn mat-flat-button color="primary">Open map</button>
         </div>
-        } @loading (after 300ms; minimum 1s) {
+        } @loading (after 100ms; minimum 1s) {
         <div class="map-loading">
             <mat-spinner diameter="30"></mat-spinner>
             <span>Rendering interactive map...</span>

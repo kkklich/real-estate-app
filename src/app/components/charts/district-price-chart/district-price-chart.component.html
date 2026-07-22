@@ -1,5 +1,5 @@
 <mat-card>
-    <div class="card-title">Median price per m² by district</div>
+    <div class="card-title">Top 10 districts by median price per m²</div>
     @if (districts().length > 0) {
     <div class="chart-wrapper">
         <canvas baseChart type="bar" [data]="chartData()" [options]="chartOptions()"></canvas>

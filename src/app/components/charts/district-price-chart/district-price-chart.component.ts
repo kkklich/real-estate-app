@@ -15,7 +15,9 @@ export class DistrictPriceChartComponent {
     readonly districts = input<DistrictPrice[]>([]);
 
     protected readonly chartData = computed<ChartData<'bar'>>(() => ({
-        labels: this.districts().map(d => d.district),
+        // the offer count rides along in the label: the cut-off for a district is only 5 offers,
+        // so several bars rest on a handful of listings and read as solid without it
+        labels: this.districts().map(d => `${d.district} (${d.count})`),
         datasets: [
             {
                 data: this.districts().map(d => d.medianPricePerMeter),
@@ -47,7 +49,8 @@ export class DistrictPriceChartComponent {
             scales: {
                 x: {
                     grid: { color: '#e9ecf6' },
-                    ticks: { color: '#6d748a', callback: (value) => Number(value).toLocaleString() }
+                    ticks: { color: '#6d748a', callback: (value) => Number(value).toLocaleString() },
+                    title: { display: true, text: 'median PLN / m²', color: '#6d748a' }
                 },
                 y: {
                     grid: { display: false },

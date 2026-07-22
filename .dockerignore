@@ -1,0 +1,8 @@
+# Keep the build context small - node_modules alone is hundreds of MB and is
+# reinstalled inside the image by "npm ci" anyway.
+node_modules
+dist
+.angular
+.git
+.vscode
+*.log

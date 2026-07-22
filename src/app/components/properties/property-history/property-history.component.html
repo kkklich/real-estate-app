@@ -145,6 +145,7 @@
                         <th>Price / m²</th>
                         <th>Portal</th>
                         <th>Change</th>
+                        <th>Offer</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -159,6 +160,13 @@
                             <span class="delta" [class.down]="e.priceChange < 0" [class.up]="e.priceChange > 0">
                                 {{ e.priceChange < 0 ? '▼' : '▲' }} {{ (e.priceChange | number:'1.0-2') }} zł
                             </span>
+                            } @else {
+                            <span class="delta flat">—</span>
+                            }
+                        </td>
+                        <td>
+                            @if (e.url) {
+                            <a class="offer-link" [href]="e.url" target="_blank" rel="noopener">Open ↗</a>
                             } @else {
                             <span class="delta flat">—</span>
                             }

@@ -92,6 +92,19 @@ app-map-view,
     box-shadow: 0 4px 24px 0 rgba(80, 106, 139, 0.08);
 }
 
+.map-placeholder {
+    mat-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 40px;
+        color: #b3bbd0;
+    }
+
+    button {
+        margin-top: 6px;
+    }
+}
+
 mat-card {
     border-radius: 14px;
     box-shadow: 0 4px 24px 0 rgba(80, 106, 139, 0.08);
