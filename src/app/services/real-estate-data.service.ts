@@ -19,22 +19,34 @@ export class RealEstateDataService {
     // failed request is retried next time instead of replaying the failure.
     private readonly dashboardCache = new Map<cityEnum, Observable<FullDashboard>>();
     private readonly priceDropsCache = new Map<cityEnum, Observable<PriceDrop[]>>();
+    private readonly mapPointsCache = new Map<cityEnum, Observable<MapPoint[]>>();
 
+    /**
+     * Charts and insights, without the map points - `includeMapPoints=false`. They are
+     * ~98% of that response (1.7 MB of 1.76 MB for Krakow) and no page draws a map before
+     * the visitor opens one, so they are requested separately by getMapPoints().
+     */
     getFullDashboard(city: cityEnum): Observable<FullDashboard> {
         return this.cached(
             this.dashboardCache,
             city,
-            () => this.http.get<FullDashboard>(`${this.apiUrl}/getFullDashboard/${city}`)
+            () => this.http.get<FullDashboard>(`${this.apiUrl}/getFullDashboard/${city}`, {
+                params: new HttpParams().set('includeMapPoints', false)
+            })
         );
     }
 
     /**
-     * The current offers of a city, as the map plots them. Read from the dashboard response
-     * rather than getMapPoints/{city}: the points are nearly all of that payload anyway,
-     * and sharing its cache makes a map the dashboard already loaded open instantly.
+     * The current offers of a city, as the map plots them. Cached per city on its own, so
+     * the dashboard's map and the one on the offers list share a single download.
      */
     getMapPoints(city: cityEnum): Observable<MapPoint[]> {
-        return this.getFullDashboard(city).pipe(map(dashboard => dashboard.mapPoints ?? []));
+        return this.cached(
+            this.mapPointsCache,
+            city,
+            () => this.http.get<MapPoint[]>(`${this.apiUrl}/getMapPoints/${city}`)
+                .pipe(map(points => points ?? []))
+        );
     }
 
     getPriceDrops(city: cityEnum, limit = 20): Observable<PriceDrop[]> {
@@ -48,12 +60,13 @@ export class RealEstateDataService {
     }
 
     /**
-     * Forgets both cached responses for a city. Without this a "Retry" after a
+     * Forgets every cached response for a city. Without this a "Retry" after a
      * *successful* load would replay the cached payload instead of refetching.
      */
     invalidate(city: cityEnum): void {
         this.dashboardCache.delete(city);
         this.priceDropsCache.delete(city);
+        this.mapPointsCache.delete(city);
     }
 
     private cached<T>(

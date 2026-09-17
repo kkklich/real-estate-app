@@ -51,14 +51,28 @@
         <app-split-donut-chart class="building-split" chartTitle="Building types"
             [slices]="data.buildingTypeSplit"></app-split-donut-chart>
 
-        <!-- maplibre-gl + WebGL are heavy - the map is only downloaded once the user asks for it -->
+        <!-- maplibre-gl + WebGL are heavy, and so are the offers themselves (~230 kB, the
+             rest of this page is ~4 kB) - both are only fetched once the user asks. -->
         @defer (on interaction(openMapBtn)) {
-        <app-map-view class="map-view" [points]="stats.mapPoints()" [groupedBy]="stats.groupedBy()"></app-map-view>
+        @if (stats.mapPoints.error(); as mapError) {
+        <div class="map-error" role="alert">
+            <mat-icon aria-hidden="true" svgIcon="error_outline"></mat-icon>
+            <span>{{ mapError }}</span>
+            <button mat-flat-button color="primary" (click)="stats.reloadMapPoints()">Retry</button>
+        </div>
+        } @else if (stats.mapPoints.data(); as points) {
+        <app-map-view class="map-view" [points]="points" [groupedBy]="stats.groupedBy()"></app-map-view>
+        } @else {
+        <div class="map-loading" role="status" aria-live="polite">
+            <mat-spinner diameter="30"></mat-spinner>
+            <span>Loading the offers...</span>
+        </div>
+        }
         } @placeholder {
         <div class="map-placeholder">
             <mat-icon aria-hidden="true" svgIcon="map"></mat-icon>
             <span>See all offers on the map</span>
-            <button #openMapBtn mat-flat-button color="primary">Open map</button>
+            <button #openMapBtn mat-flat-button color="primary" (click)="stats.requestMapPoints()">Open map</button>
         </div>
         } @loading (after 100ms; minimum 1s) {
         <div class="map-loading" role="status" aria-live="polite">

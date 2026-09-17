@@ -5,12 +5,14 @@ import { CalculateStatisticsService } from './calculate-statistics';
 import { RealEstateDataService } from './real-estate-data.service';
 import { cityEnum } from '../models/enums/city.enum';
 import { FullDashboard } from '../models/fullDashboard';
+import { MapPoint } from '../models/mapPoint';
 import { PriceDrop } from '../models/priceDrop';
 
 /** Hands out one controllable Subject per request, so a test decides when each answers. */
 class FakeRealEstateData {
     readonly dashboards: { city: cityEnum; response: Subject<FullDashboard> }[] = [];
     readonly drops: { city: cityEnum; response: Subject<PriceDrop[]> }[] = [];
+    readonly mapPoints: { city: cityEnum; response: Subject<MapPoint[]> }[] = [];
     readonly invalidated: cityEnum[] = [];
 
     getFullDashboard(city: cityEnum) {
@@ -22,6 +24,12 @@ class FakeRealEstateData {
     getPriceDrops(city: cityEnum) {
         const response = new Subject<PriceDrop[]>();
         this.drops.push({ city, response });
+        return response;
+    }
+
+    getMapPoints(city: cityEnum) {
+        const response = new Subject<MapPoint[]>();
+        this.mapPoints.push({ city, response });
         return response;
     }
 
@@ -53,7 +61,7 @@ describe('CalculateStatisticsService', () => {
 
     beforeEach(() => spyOn(console, 'error'));
 
-    it('loads the default city and exposes its charts, insights and map points', () => {
+    it('loads the default city and exposes its charts and insights', () => {
         const service = create();
 
         expect(fake.dashboards.map(d => d.city)).toEqual([cityEnum.Krakow]);
@@ -65,7 +73,53 @@ describe('CalculateStatisticsService', () => {
         expect(service.dashboard.settled()).toBeTrue();
         expect(service.charts()).toEqual(dashboardFor('krakow').charts);
         expect(service.insights()).toEqual(dashboardFor('krakow').insights);
-        expect(service.mapPoints()).toEqual([]);
+    });
+
+    // The map offers are by far the biggest response the API serves; a dashboard whose map
+    // nobody opens must not download them.
+    it('does not request the map offers until a map is opened', () => {
+        const service = create();
+        fake.dashboards[0].response.next(dashboardFor('krakow'));
+
+        service.city.set(cityEnum.Katowice);
+        TestBed.tick();
+
+        expect(fake.mapPoints.length).toBe(0);
+        expect(service.mapPoints.data()).toBeNull();
+    });
+
+    it('requests the map offers once a map is opened, then follows the city', () => {
+        const service = create();
+        const points = [{ title: 'an offer' }] as unknown as MapPoint[];
+
+        service.requestMapPoints();
+        TestBed.tick();
+
+        expect(fake.mapPoints.map(m => m.city)).toEqual([cityEnum.Krakow]);
+        fake.mapPoints[0].response.next(points);
+        expect(service.mapPoints.data()).toEqual(points);
+
+        service.city.set(cityEnum.Katowice);
+        TestBed.tick();
+
+        expect(fake.mapPoints.map(m => m.city)).toEqual([cityEnum.Krakow, cityEnum.Katowice]);
+        expect(service.mapPoints.loading()).withContext('the previous city stays off the map').toBeTrue();
+    });
+
+    it('reports a failed map request as an error, and retries it on demand', () => {
+        const service = create();
+        service.requestMapPoints();
+        TestBed.tick();
+
+        fake.mapPoints[0].response.error(new Error('boom'));
+
+        expect(service.mapPoints.error()).toBe('Could not load the map.');
+
+        service.reloadMapPoints();
+        TestBed.tick();
+
+        expect(fake.mapPoints.length).toBe(2);
+        expect(fake.dashboards.length).withContext('a map retry must not refetch the page').toBe(1);
     });
 
     // Review finding 1a: a failed request used to be indistinguishable from "still loading".
