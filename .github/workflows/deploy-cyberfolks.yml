@@ -1,0 +1,140 @@
+
+# Builds the pre-rendered static Angular bundle and publishes it over FTP to the
+# cyberFolks shared hosting, into
+#     sites/cf9fdf5ccf7d71a61b2548.cyberfolks.host/public_html/
+#
+# Required repository secrets (Settings -> Secrets and variables -> Actions):
+#     FTP_SERVER     FTP host from the cyberFolks panel, e.g. ftp.cyberfolks.pl
+#                    or the server IP. Host name only - no ftp:// and no path.
+#     FTP_USERNAME   FTP account login.
+#     FTP_PASSWORD   FTP account password.
+#
+# Optional repository variable:
+#     CYBERFOLKS_PUBLIC_HTML   overrides the upload path below, for when the
+#                              site moves off the temporary technical domain.
+
+name: Deploy to cyberFolks
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Connect and diff, but upload nothing (checks credentials safely)"
+        type: boolean
+        default: false
+      clean_slate:
+        description: "Delete everything in public_html before uploading (first deploy / stale files)"
+        type: boolean
+        default: false
+
+# One deploy at a time. Two concurrent FTP sessions writing the same directory
+# corrupt the action's sync state and can leave half a release on the server.
+concurrency:
+  group: deploy-cyberfolks
+  cancel-in-progress: false
+
+env:
+  # public_html is the document root of that domain, so the app is served
+  # from /. BASE_HREF, REMOTE_DIR and RewriteBase in deploy/cyberfolks/.htaccess
+  # are one setting in three places - change them together or nothing loads.
+  #
+  # To publish into a sub-directory instead (e.g. if that document root has to
+  # keep serving something else), all three move in step:
+  #     BASE_HREF:  /realestate/
+  #     REMOTE_DIR: .../public_html/realestate/
+  #     RewriteBase /realestate/
+  BASE_HREF: /
+  BUILD_DIR: dist/real-estate-app/browser
+  REMOTE_DIR: sites/cf9fdf5ccf7d71a61b2548.cyberfolks.host/public_html/
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build static bundle
+        env:
+          # The build runs out of heap on this project with parallel workers;
+          # one worker is slower but survives.
+          NG_BUILD_MAX_WORKERS: 1
+        run: npx ng build --configuration production-static --base-href "$BASE_HREF"
+
+      - name: Add .htaccess
+        # Apache config for SPA routing, caching and the HTTPS redirect. It is
+        # not an Angular asset, so the build does not place it - without this
+        # step every deep link 404s after deploy.
+        run: cp deploy/cyberfolks/.htaccess "$BUILD_DIR/.htaccess"
+
+      - name: Verify the bundle before uploading
+        # Cheap guard against the two failure modes that are invisible until
+        # someone loads the live site: a base href that disagrees with where the
+        # files land, and a missing .htaccess.
+        run: |
+          set -euo pipefail
+          for f in index.html index.csr.html properties/index.html .htaccess favicon.ico; do
+            test -f "$BUILD_DIR/$f" || { echo "::error::missing $f in $BUILD_DIR"; exit 1; }
+          done
+
+          if ! grep -qF "<base href=\"$BASE_HREF\">" "$BUILD_DIR/index.html"; then
+            echo "::error::index.html base href does not match BASE_HREF ($BASE_HREF)"
+            grep -o '<base[^>]*>' "$BUILD_DIR/index.html" || true
+            exit 1
+          fi
+
+          if ! grep -qE "^\s*RewriteBase\s+$BASE_HREF\s*$" "$BUILD_DIR/.htaccess"; then
+            echo "::error::.htaccess RewriteBase does not match BASE_HREF ($BASE_HREF)"
+            exit 1
+          fi
+
+          echo "Bundle OK - $(du -sh "$BUILD_DIR" | cut -f1) across $(find "$BUILD_DIR" -type f | wc -l) files"
+
+      - name: Publish over FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          # Explicit FTPS on the control port. If the handshake fails, the
+          # cyberFolks account may only offer implicit FTPS ("ftps-legacy",
+          # port 990); plain "ftp" is a last resort - it sends the password in
+          # the clear.
+          protocol: ftps
+          port: 21
+          # Both paths must keep their trailing slash - the action treats them
+          # as directory prefixes and silently mangles them otherwise.
+          local-dir: ${{ env.BUILD_DIR }}/
+          server-dir: ${{ vars.CYBERFOLKS_PUBLIC_HTML || env.REMOTE_DIR }}
+          # Uploads only what changed, tracked by a manifest kept on the server.
+          # That manifest is also what removes the previous release's hashed
+          # bundles, so the directory does not grow with every deploy.
+          dry-run: ${{ inputs.dry_run == true }}
+          dangerous-clean-slate: ${{ inputs.clean_slate == true }}
+
+      - name: Summary
+        if: success()
+        run: |
+          {
+            echo "### Deployed to cyberFolks"
+            echo
+            echo "- Site: https://cf9fdf5ccf7d71a61b2548.cyberfolks.host/"
+            echo "- Commit: \`${GITHUB_SHA::7}\`"
+            echo "- Base href: \`$BASE_HREF\`"
+            echo "- Dry run: \`${{ inputs.dry_run == true }}\`"
+            echo
+            echo "Reload directly on \`/properties\` to confirm the rewrite rules took."
+          } >> "$GITHUB_STEP_SUMMARY"

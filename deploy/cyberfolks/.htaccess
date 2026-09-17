@@ -1,0 +1,107 @@
+# Real Estate App - Apache config for cyberFolks shared hosting.
+#
+# Deployed by .github/workflows/deploy-cyberfolks.yml into the site root:
+#     sites/<domain>/public_html/
+#
+# This is the ROOT-path variant: it pairs with a build made with
+# --base-href /. RewriteBase, the base href and the upload directory must all
+# agree - a mismatch is the usual cause of "CSS and JS 404 after deploy".
+# (The workspace repo keeps a /realestate/ sub-path variant at
+# deploy/shared-hosting/.htaccess; do not mix the two up.)
+#
+# Without this file, reloading /properties returns an Apache 404 - Apache looks
+# for a directory that only the Angular router knows about.
+
+# Stop Apache guessing extensions; it breaks extensionless route URLs.
+Options -MultiViews
+Options -Indexes
+
+# ------------------------------------------------------------ SPA routing ---
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Must match the base href the bundle was built with.
+    RewriteBase /
+
+    # HTTPS first. The app calls the API over HTTPS, and a page served over
+    # plain HTTP would have those calls blocked as mixed content. cyberFolks'
+    # *.cyberfolks.host technical domains ship with a certificate, so this can
+    # be on from the first deploy.
+    #
+    # This has to sit ABOVE the SPA rules, not below them: an internal rewrite
+    # to index.html restarts the ruleset with a URI that now hits the
+    # "real file, serve as-is" rule and stops there, so anything after it never
+    # runs for route URLs.
+    RewriteCond %{HTTPS} !=on
+    RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+    # Real files and real directories are served as-is. The static build
+    # pre-renders / and /properties into real HTML, so those come straight
+    # off disk.
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+
+    # /properties/history is deliberately NOT pre-rendered: the page is addressed
+    # by ?city= and ?url=, which do not exist at build time, so the only thing a
+    # prerender could capture is its "missing parameter" error. Hand it the empty
+    # CSR shell - index.html is the pre-rendered dashboard, and serving that here
+    # paints a dashboard the router immediately tears down.
+    RewriteRule ^properties/history/?$ index.csr.html [L]
+
+    # Everything else is an Angular route: hand it index.html and let the
+    # client-side router take over.
+    RewriteRule ^ index.html [L]
+</IfModule>
+
+# ------------------------------------------------------------ deploy state ---
+# The FTP action keeps its incremental-sync manifest next to the site. It lists
+# every deployed filename and its hash, so it has no business being public.
+<Files ".ftp-deploy-sync-state.json">
+    Require all denied
+</Files>
+
+# ---------------------------------------------------------------- caching ---
+<IfModule mod_headers.c>
+    # index.html must never be cached, or browsers keep loading the previous
+    # release's bundle references after a deploy.
+    <FilesMatch "^index(\.csr)?\.html$">
+        Header set Cache-Control "no-cache, no-store, must-revalidate"
+        Header set Pragma "no-cache"
+        Header set Expires "0"
+    </FilesMatch>
+
+    # Angular content-hashes every bundle filename, so these are immutable.
+    <FilesMatch "\.(js|css|woff2?|ttf|eot|svg|png|jpe?g|gif|webp|ico)$">
+        Header set Cache-Control "public, max-age=31536000, immutable"
+    </FilesMatch>
+
+    Header set X-Content-Type-Options "nosniff"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType text/css                "access plus 1 year"
+    ExpiresByType application/javascript  "access plus 1 year"
+    ExpiresByType image/svg+xml           "access plus 1 year"
+    ExpiresByType image/webp              "access plus 1 year"
+    ExpiresByType text/html               "access plus 0 seconds"
+</IfModule>
+
+# ------------------------------------------------------------- compression ---
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/plain text/css text/xml
+    AddOutputFilterByType DEFLATE application/javascript application/json
+    AddOutputFilterByType DEFLATE application/xml image/svg+xml
+</IfModule>
+
+# --------------------------------------------------------------- mime types ---
+<IfModule mod_mime.c>
+    AddType application/javascript .js .mjs
+    AddType application/json       .json
+    AddType image/svg+xml          .svg
+    AddType font/woff2             .woff2
+    # MapLibre vector tile and geojson payloads
+    AddType application/geo+json   .geojson
+</IfModule>
