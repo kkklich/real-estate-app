@@ -60,8 +60,8 @@ One service, one signal graph — no NgRx, no RxJS state.
 
 ```
 city signal ──effect──► getFullDashboard(city) ──┬─► charts    ─► chart components
-                                                 ├─► insights  ─► market insights
-                                                 └─► mapPoints ─► map
+                    │                            └─► insights  ─► market insights
+                    └─ once a map is opened ───────► mapPoints ─► map
 ```
 
 [`CalculateStatisticsService`](src/app/services/calculate-statistics.ts) holds
@@ -70,16 +70,21 @@ the city and the three response slices. Changing the city sets one signal; an
 alone — and components read `computed()` projections. Nothing writes back to
 the store.
 
-The whole dashboard is **one HTTP call** (`getFullDashboard/{city}`), cached per
-city in [`RealEstateDataService`](src/app/services/real-estate-data.service.ts)
-with `shareReplay`, so revisiting a city replays instantly. A failed request
-drops its cache entry so the next visit retries instead of replaying the error.
+The dashboard is **one HTTP call** (`getFullDashboard/{city}`), cached per city
+in [`RealEstateDataService`](src/app/services/real-estate-data.service.ts) with
+`shareReplay`, so revisiting a city replays instantly. A failed request drops
+its cache entry so the next visit retries instead of replaying the error.
+
+It asks for that dashboard **without the map points** (`includeMapPoints=false`):
+they are ~98% of the response, and no page draws a map until the visitor opens
+one. Opening a map calls `requestMapPoints()`, which fetches `getMapPoints/{city}`
+into its own per-city cache — shared with the map on `/properties`, so whichever
+opens first pays for the download.
 
 `/properties` is independent: it owns its filter, sort and paging signals and
 calls [`PropertyListService`](src/app/services/property-list.service.ts)
-directly. Its map is the dashboard's `map-view`, fed with the `mapPoints` of the
-applied city (both cities for "All") from the same cached `getFullDashboard`
-response. The points are filtered in the browser by
+directly. Its map is the dashboard's `map-view`, fed with the map points of the
+applied city (both cities for "All"). The points are filtered in the browser by
 [`filterMapPoints`](src/app/components/properties/properties-list/map-point-filter.ts),
 which mirrors the API's list filters. They come from the latest scrape only, so offers that are
 no longer listed appear in the table but not on the map.
