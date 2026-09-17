@@ -1,19 +1,21 @@
-import { Component, Inject, PLATFORM_ID, computed } from '@angular/core';
-import { CalculateStatisticsService } from '../../services/calculate-statistics';
-import { SearchFilterComponent } from "../search-filter/search-filter-component";
+import { Component, PLATFORM_ID, inject } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
-import { MapViewComponent } from "../charts/map-view/map-view.component";
-import { isPlatformBrowser } from '@angular/common';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { CalculateStatisticsService } from '../../services/calculate-statistics';
 import { cityEnum } from '../../models/enums/city.enum';
+import { SearchFilterComponent } from '../search-filter/search-filter-component';
+import { MapViewComponent } from '../charts/map-view/map-view.component';
 import { MarketInsightsComponent } from '../market-insights/market-insights.component';
+import { PriceDropsComponent } from '../price-drops/price-drops.component';
 import { SummaryCardsComponent } from '../summary-cards/summary-cards.component';
 import { PriceTrendChartComponent } from '../charts/price-trend-chart/price-trend-chart.component';
 import { PriceHistogramChartComponent } from '../charts/price-histogram-chart/price-histogram-chart.component';
 import { DistrictPriceChartComponent } from '../charts/district-price-chart/district-price-chart.component';
 import { SplitDonutChartComponent } from '../charts/split-donut-chart/split-donut-chart.component';
+import { provideAppCharts } from '../charts/chart-setup';
 
 @Component({
     selector: 'app-dashboard',
@@ -25,35 +27,34 @@ import { SplitDonutChartComponent } from '../charts/split-donut-chart/split-donu
         MapViewComponent,
         MatProgressSpinnerModule,
         MarketInsightsComponent,
+        PriceDropsComponent,
         SummaryCardsComponent,
         PriceTrendChartComponent,
         PriceHistogramChartComponent,
         DistrictPriceChartComponent,
         SplitDonutChartComponent
     ],
+    // Registers Chart.js for the five charts below; see chart-setup.ts.
+    providers: [provideAppCharts()],
     templateUrl: './dashboard.component.html',
     styleUrl: './dashboard.component.scss'
 })
 export class DashboardComponent {
 
-    isBrowser = false;
+    readonly stats = inject(CalculateStatisticsService);
 
-    public readonly charts = computed(() => this.calculateStatisticsService.charts());
+    // Charts and the map need a canvas / WebGL context, so the grid is client-only.
+    readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
-    constructor(
-        @Inject(PLATFORM_ID) private readonly platformId: Object,
-        readonly calculateStatisticsService: CalculateStatisticsService
-    ) {
-        this.isBrowser = isPlatformBrowser(this.platformId)
+    readonly charts = this.stats.charts;
+
+    onGroupByTypeChange(type: string | null): void {
+        this.stats.groupedBy.set(type ?? 'market');
     }
 
-    public onGroupByTypeChange(type: string | null) {
-        this.calculateStatisticsService.groupedBy.set(type || 'market');
-    }
-
-    public onCityChange(city: cityEnum) {
+    onCityChange(city: cityEnum): void {
         if (city) {
-            this.calculateStatisticsService.city.set(city);
+            this.stats.city.set(city);
         }
     }
 }

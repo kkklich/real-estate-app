@@ -1,29 +1,38 @@
-import { Injectable, signal, computed, effect, untracked } from "@angular/core";
+import { Injectable, PLATFORM_ID, Signal, computed, inject, signal } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
+import { Observable, of } from 'rxjs';
+import { catchError, filter, map, switchMap, tap } from 'rxjs/operators';
 import { RealEstateDataService } from './real-estate-data.service';
-import { cityEnum } from "../models/enums/city.enum";
-import { DashboardCharts } from "../models/dashboardCharts";
-import { MapPoint } from "../models/mapPoint";
-import { MarketInsights } from "../models/marketInsights";
+import { AsyncResource } from './async-resource';
+import { httpErrorMessage } from './http-error-message';
+import { cityEnum } from '../models/enums/city.enum';
+import { FullDashboard } from '../models/fullDashboard';
+import { PriceDrop } from '../models/priceDrop';
+
+/** Either branch of a request, flattened so switchMap can keep the outer stream alive. */
+type Result<T> = { ok: true; data: T } | { ok: false; err: unknown };
 
 @Injectable({ providedIn: 'root' })
-
 export class CalculateStatisticsService {
 
-    private readonly _charts = signal<DashboardCharts | null>(null);
-    public readonly charts = computed(() => this._charts());
+    private readonly realEstateService = inject(RealEstateDataService);
 
-    private readonly _insights = signal<MarketInsights | null>(null);
-    public readonly insights = computed(() => this._insights());
+    private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
-    private readonly _mapPoints = signal<MapPoint[] | null>(null);
-    public readonly mapPoints = computed(() => this._mapPoints());
+    /** Charts, insights and map points all arrive together in one getFullDashboard call. */
+    readonly dashboard = new AsyncResource<FullDashboard>();
+    /** A lighter, separate call: it loads independently and never blocks the dashboard. */
+    readonly priceDrops = new AsyncResource<PriceDrop[]>();
 
-    public groupedBy = signal<string>('market');
-    public city = signal<cityEnum>(cityEnum.Krakow);
+    readonly charts = computed(() => this.dashboard.data()?.charts ?? null);
+    readonly insights = computed(() => this.dashboard.data()?.insights ?? null);
+    readonly mapPoints = computed(() => this.dashboard.data()?.mapPoints ?? null);
 
-    public readonly hasData = computed(() => this._charts() !== null);
+    readonly groupedBy = signal<string>('market');
+    readonly city = signal<cityEnum>(cityEnum.Krakow);
 
-    public groupByTypes: string[] = [
+    readonly groupByTypes: readonly string[] = [
         'price',
         'pricePerMeter',
         'floor',
@@ -34,38 +43,64 @@ export class CalculateStatisticsService {
         'location.district'
     ];
 
-    constructor(private readonly realEstateService: RealEstateDataService) {
-        this.setupSignalListener();
+    /** Bumped by reload() so a retry re-runs both requests for the current city. */
+    private readonly reloadNonce = signal(0);
+
+    constructor() {
+        // A fresh object every time, so a reload re-emits even when the city has not changed.
+        const request = computed(() => ({ city: this.city(), nonce: this.reloadNonce() }));
+
+        this.wire(
+            request,
+            this.dashboard,
+            city => this.realEstateService.getFullDashboard(city),
+            'the dashboard'
+        );
+
+        this.wire(
+            request,
+            this.priceDrops,
+            city => this.realEstateService.getPriceDrops(city),
+            'price drops'
+        );
     }
 
-    private setupSignalListener(): void {
-        effect(() => {
-            const city = this.city();
-            untracked(() => this.fetchFullDashboard(city));
-        });
+    /** Drops the cached responses for the current city and requests them again. */
+    reload(): void {
+        this.realEstateService.invalidate(this.city());
+        this.reloadNonce.update(n => n + 1);
     }
 
-    private fetchFullDashboard(city: cityEnum): void {
-        this.realEstateService.getFullDashboard(city).subscribe({
-            next: data => {
-                this._charts.set(data.charts);
-                this._insights.set(data.insights);
-                this._mapPoints.set(data.mapPoints);
-            },
-            error: err => {
-                console.error('getFullDashboard error', err);
-                this._charts.set(null);
-                this._insights.set(null);
-                this._mapPoints.set(null);
+    /**
+     * switchMap cancels a request still in flight when the city changes again, so a
+     * slow response for a city the user has already left cannot overwrite the new one.
+     */
+    private wire<T>(
+        request: Signal<{ city: cityEnum }>,
+        resource: AsyncResource<T>,
+        fetch: (city: cityEnum) => Observable<T>,
+        subject: string
+    ): void {
+        toObservable(request).pipe(
+            // Prerendering must not call the API: the build machine has no guaranteed
+            // route to it, and whatever came back - a timeout included - would be frozen
+            // into the static HTML every visitor is served. Filtering ahead of start()
+            // leaves the resource in its initial loading state, so the prerendered page
+            // is the spinner the browser is about to replace with real data.
+            filter(() => this.isBrowser),
+            tap(() => resource.start()),
+            switchMap(({ city }) => fetch(city).pipe(
+                map((data): Result<T> => ({ ok: true, data })),
+                catchError((err: unknown) => of<Result<T>>({ ok: false, err }))
+            )),
+            takeUntilDestroyed()
+        ).subscribe(result => {
+            if (result.ok) {
+                resource.succeed(result.data);
+            } else {
+                console.error(`${subject} request failed`, result.err);
+                resource.fail(httpErrorMessage(result.err, subject));
             }
         });
-    }
-
-    public getData(): MapPoint[] | null {
-        return this._mapPoints();
-    }
-
-    public getNested(obj: any, path: string): any {
-        return path.split('.').reduce((acc, part) => (acc ? acc[part] : undefined), obj);
     }
 }

@@ -1,16 +1,10 @@
+@use 'tokens' as *;
+
 mat-card {
     border-radius: 14px;
     box-shadow: 0 4px 24px 0 rgba(80, 106, 139, 0.08);
     border: none;
     padding: 20px 22px 18px 22px;
-}
-
-.card-title {
-    font-size: 1.17rem;
-    font-weight: 600;
-    color: #22294a;
-    margin-bottom: 18px;
-    letter-spacing: 0.01em;
 }
 
 .chart-wrapper {
@@ -23,10 +17,10 @@ mat-card {
     align-items: center;
     justify-content: center;
     height: 300px;
-    color: #6d748a;
+    color: $color-text-muted;
 }
 
-@media (max-width: 700px) {
+@media (max-width: $breakpoint-tablet) {
     .chart-wrapper {
         height: 220px;
     }
@@ -36,7 +30,7 @@ mat-card {
     }
 }
 
-@media (max-width: 480px) {
+@media (max-width: $breakpoint-phone) {
     .chart-wrapper {
         height: 180px;
     }

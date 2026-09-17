@@ -1,12 +1,53 @@
+@use 'tokens' as *;
+
 .property-list {
     padding: 22px 26px 40px 26px;
+}
+
+// Title left, map toggle right; the button drops below the title when there is no room.
+.page-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 6px 0 18px 0;
 }
 
 .page-title {
     font-size: 1.5rem;
     font-weight: 600;
-    color: #22294a;
-    margin: 6px 0 18px 0;
+    color: $color-text;
+    margin: 0;
+}
+
+// Between the filters and the table: it plots the offers the filters select.
+.map-panel {
+    margin-bottom: 20px;
+    padding: 14px 16px 16px;
+    border-radius: 12px;
+    box-shadow: 0 4px 24px 0 rgba(80, 106, 139, 0.08);
+    background: #fff;
+}
+
+.map-summary {
+    margin: 0 0 12px 0;
+    color: $color-text;
+    font-size: 0.9rem;
+}
+
+.map-summary__note {
+    display: block;
+    margin-top: 2px;
+    color: $color-text-muted;
+    font-size: 0.8rem;
+}
+
+// The map and the spinners that stand in for it take the same space, so nothing jumps.
+.map-slot {
+    height: 460px;
+    border-radius: 8px;
+    overflow: hidden;
 }
 
 .filters {
@@ -31,13 +72,15 @@
 
 .state-box {
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
+    gap: 12px;
     min-height: 180px;
-    color: #6d748a;
+    color: $color-text-muted;
 
     &.error {
-        color: #c0392b;
+        color: $color-danger;
     }
 }
 
@@ -58,21 +101,38 @@ table.results {
         padding: 10px 14px;
         text-align: left;
         white-space: nowrap;
-        border-bottom: 1px solid #eef0f6;
+        border-bottom: 1px solid $color-subtle;
     }
 
     th {
-        color: #6d748a;
+        color: $color-text-muted;
         font-weight: 600;
-        background: #f7f8fc;
+        background: $color-surface-header;
     }
 
+    // The header holds a real <button>, so sorting is reachable by keyboard.
     th.sortable {
+        padding: 0;
+    }
+
+    .sort-btn {
+        width: 100%;
+        padding: 10px 14px;
+        font: inherit;
+        color: inherit;
+        text-align: inherit;
+        background: none;
+        border: 0;
         cursor: pointer;
         user-select: none;
 
         &:hover {
-            color: #234392;
+            color: $color-brand;
+        }
+
+        &:focus-visible {
+            outline: 2px solid $color-brand;
+            outline-offset: -2px;
         }
     }
 
@@ -82,13 +142,13 @@ table.results {
     }
 
     tbody tr:hover {
-        background: #f9fbff;
+        background: $color-surface-hover;
     }
 
     .title-cell {
         max-width: 320px;
         white-space: normal;
-        color: #22294a;
+        color: $color-text;
         font-weight: 500;
     }
 
@@ -101,15 +161,15 @@ table.results {
     font-weight: 600;
 
     &.down {
-        color: #1e9e5a;
+        color: $color-positive;
     }
 
     &.up {
-        color: #c0392b;
+        color: $color-danger;
     }
 
     &.flat {
-        color: #9aa0b4;
+        color: $color-text-faint;
         font-weight: 400;
     }
 }
@@ -119,8 +179,14 @@ mat-paginator {
     margin-top: 8px;
 }
 
-@media (max-width: 700px) {
+@media (max-width: $breakpoint-tablet) {
     .filters mat-form-field {
         width: 100%;
+    }
+
+    // Shorter than on desktop, so a swipe can still scroll the page past the map, but tall
+    // enough to keep offers in view above the legend.
+    .map-slot {
+        height: 400px;
     }
 }

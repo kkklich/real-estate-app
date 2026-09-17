@@ -2,6 +2,7 @@ import { Component, computed, input } from '@angular/core';
 import { MatCardModule } from '@angular/material/card';
 import { BaseChartDirective } from 'ng2-charts';
 import { ChartData, ChartOptions } from 'chart.js';
+import { CHART_COLORS } from '../chart-theme';
 import { DistrictPrice } from '../../../models/marketInsights';
 
 @Component({
@@ -23,7 +24,7 @@ export class DistrictPriceChartComponent {
                 data: this.districts().map(d => d.medianPricePerMeter),
                 label: 'Median PLN / m²',
                 backgroundColor: '#7fa6e8',
-                hoverBackgroundColor: '#234392',
+                hoverBackgroundColor: CHART_COLORS.brand,
                 borderRadius: 3
             }
         ]
@@ -48,13 +49,13 @@ export class DistrictPriceChartComponent {
             },
             scales: {
                 x: {
-                    grid: { color: '#e9ecf6' },
-                    ticks: { color: '#6d748a', callback: (value) => Number(value).toLocaleString() },
-                    title: { display: true, text: 'median PLN / m²', color: '#6d748a' }
+                    grid: { color: CHART_COLORS.grid },
+                    ticks: { color: CHART_COLORS.textMuted, callback: (value) => Number(value).toLocaleString() },
+                    title: { display: true, text: 'median PLN / m²', color: CHART_COLORS.textMuted }
                 },
                 y: {
                     grid: { display: false },
-                    ticks: { color: '#22294a' }
+                    ticks: { color: CHART_COLORS.text }
                 }
             }
         };

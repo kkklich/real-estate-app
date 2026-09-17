@@ -48,7 +48,7 @@ from a subpath, not the domain root. Override per build with `--base-href`.
 | Route | What |
 |---|---|
 | `/` | dashboard — summary cards, price trend, price/m² histogram, district medians, market & building-type donuts, map, market insights |
-| `/properties` | every distinct offer: filter, sort, page |
+| `/properties` | every distinct offer: filter, sort, page; **Show on map** plots the current offers that match the applied filters |
 | `/properties/history` | price history of one offer across scrapes |
 
 The toolbar switches city (Kraków / Katowice). That is the main input the whole
@@ -77,7 +77,12 @@ drops its cache entry so the next visit retries instead of replaying the error.
 
 `/properties` is independent: it owns its filter, sort and paging signals and
 calls [`PropertyListService`](src/app/services/property-list.service.ts)
-directly.
+directly. Its map is the dashboard's `map-view`, fed with the `mapPoints` of the
+applied city (both cities for "All") from the same cached `getFullDashboard`
+response. The points are filtered in the browser by
+[`filterMapPoints`](src/app/components/properties/properties-list/map-point-filter.ts),
+which mirrors the API's list filters. They come from the latest scrape only, so offers that are
+no longer listed appear in the table but not on the map.
 
 ## Layout
 
@@ -100,9 +105,10 @@ src/app/
 
 - **Zoneless.** `provideZonelessChangeDetection()` — state must go through
   signals. A plain field mutation will not repaint.
-- **SSR guards.** The map uses WebGL and cannot render on the server;
-  `map-view` is behind `isPlatformBrowser`. Anything touching `window`,
-  `document` or a canvas needs the same treatment.
+- **SSR guards.** The map uses WebGL and cannot render on the server. On the
+  dashboard `map-view` is behind `isPlatformBrowser`; on `/properties` it only
+  mounts after a click. Anything touching `window`, `document` or a canvas needs
+  the same treatment.
 - **Locale is `pl`**, registered globally, so prices and dates format Polish
   regardless of the browser.
 - **The MapTiler key in `environment.ts` is public** — it ships in the client

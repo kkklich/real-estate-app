@@ -1,4 +1,57 @@
-  #map {
-      width: 100%;
-      height: 100%;
-  }
+// The legend is positioned over the map, so the host must be its containing block.
+:host {
+    position: relative;
+    display: block;
+}
+
+.map-canvas {
+    width: 100%;
+    height: 100%;
+}
+
+// Bottom-left: the navigation control sits top-right and the attribution bottom-right.
+.map-legend {
+    position: absolute;
+    left: 10px;
+    bottom: 10px;
+    max-width: min(240px, calc(100% - 70px));
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: #ffffff;
+    box-shadow: 0 1px 4px rgba(34, 41, 74, 0.25);
+    color: #22294a;
+    font-size: 12px;
+    line-height: 1.4;
+}
+
+.map-legend__title {
+    margin: 0 0 4px;
+    font-weight: 600;
+}
+
+.map-legend__items {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.map-legend__item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.map-legend__swatch {
+    flex: none;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    // Forced-colors mode would otherwise repaint the swatches in system colors, and the
+    // key would stop matching the dots, which the WebGL canvas keeps in their real colors.
+    forced-color-adjust: none;
+}
+
+.map-legend__note {
+    margin: 4px 0 0;
+    color: #6d748a;
+}

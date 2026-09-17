@@ -1,1 +1,16 @@
-<div id="map"></div>
+<div #mapContainer class="map-canvas" role="region" aria-label="Map of offers"></div>
+
+@if (legend(); as key) {
+<div class="map-legend">
+    <p class="map-legend__title"><span class="sr-only">Map legend: </span>{{ key.title }}</p>
+    <ul class="map-legend__items">
+        @for (entry of key.entries; track $index) {
+        <li class="map-legend__item">
+            <span class="map-legend__swatch" [style.background-color]="entry.color" aria-hidden="true"></span>
+            {{ entry.label }}
+        </li>
+        }
+    </ul>
+    <p class="map-legend__note">Numbered circles group nearby offers; zoom in to split them.</p>
+</div>
+}

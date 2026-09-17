@@ -1,3 +1,5 @@
+@use 'tokens' as *;
+
 .filter-container {
     width: 100%;
     margin: 0;
@@ -9,7 +11,7 @@
     z-index: 1;
 }
 
-@media (max-width: 600px) {
+@media (max-width: $breakpoint-tablet) {
     .filter-container {
         padding: 0.5rem 0.5rem 0 0.5rem;
         flex-direction: column;
@@ -32,13 +34,42 @@
     text-align: center;
 }
 
+// Loading and error states for a refresh (city switch, retry). They sit under the
+// filter bar inside the content area, so unlike the first-load wait they are not full-page.
+.content-state {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 16px;
+    min-height: 320px;
+    padding: 24px 16px;
+    box-sizing: border-box;
+    text-align: center;
+    color: $color-text-muted;
+}
+
+.error-state {
+    mat-icon {
+        width: 44px;
+        height: 44px;
+        font-size: 44px;
+        color: $color-danger;
+    }
+
+    .error-message {
+        max-width: 48ch;
+        color: $color-text;
+    }
+}
+
 .dashboard-container {
     padding: 32px 16px;
     max-width: 1440px;
     margin: 0 auto;
 }
 
-@media (max-width: 700px) {
+@media (max-width: $breakpoint-tablet) {
     .dashboard-container {
         padding: 8px;
     }
@@ -54,7 +85,8 @@
         "trend trend trend"
         "district histogram map"
         "market-split building-split map"
-        "insights insights insights";
+        "insights insights insights"
+        "price-drops price-drops price-drops";
 }
 
 .summary { grid-area: summary; min-width: 0; }
@@ -64,6 +96,7 @@
 .market-split { grid-area: market-split; min-width: 0; }
 .building-split { grid-area: building-split; min-width: 0; }
 .market-insights { grid-area: insights; min-width: 0; }
+.price-drops { grid-area: price-drops; min-width: 0; }
 
 app-map-view,
 .map-placeholder,
@@ -86,7 +119,7 @@ app-map-view,
     align-items: center;
     justify-content: center;
     gap: 10px;
-    color: #6d748a;
+    color: $color-text-muted;
     background: #fff;
     border-radius: 14px;
     box-shadow: 0 4px 24px 0 rgba(80, 106, 139, 0.08);
@@ -112,15 +145,7 @@ mat-card {
     padding: 20px 22px 18px 22px;
 }
 
-.card-title {
-    font-size: 1.17rem;
-    font-weight: 600;
-    color: #22294a;
-    margin-bottom: 18px;
-    letter-spacing: 0.01em;
-}
-
-@media (max-width: 1100px) {
+@media (max-width: $breakpoint-desktop) {
     .dashboard-grid {
         grid-template-columns: 1fr 1fr;
         grid-template-areas:
@@ -129,7 +154,8 @@ mat-card {
             "district histogram"
             "market-split building-split"
             "map map"
-            "insights insights";
+            "insights insights"
+            "price-drops price-drops";
     }
 
     app-map-view,
@@ -141,7 +167,7 @@ mat-card {
     }
 }
 
-@media (max-width: 700px) {
+@media (max-width: $breakpoint-tablet) {
     .dashboard-grid {
         grid-template-columns: 1fr;
         grid-template-areas:
@@ -152,7 +178,8 @@ mat-card {
             "market-split"
             "building-split"
             "map"
-            "insights";
+            "insights"
+            "price-drops";
         gap: 16px;
     }
 
@@ -171,15 +198,15 @@ mat-card {
 
 mat-toolbar {
     background: #f6fafd;
-    color: #22294a;
+    color: $color-text;
     box-shadow: none;
-    border-bottom: 1px solid #e8eaf4;
+    border-bottom: 1px solid $color-border;
 
     .logo {
         font-weight: 700;
         font-size: 1.55rem;
         letter-spacing: -0.02em;
-        color: #234392;
+        color: $color-brand;
     }
 
     .spacer {
@@ -187,7 +214,7 @@ mat-toolbar {
     }
 }
 
-@media (max-width: 480px) {
+@media (max-width: $breakpoint-phone) {
     mat-toolbar .logo {
         font-size: 1.2rem;
     }

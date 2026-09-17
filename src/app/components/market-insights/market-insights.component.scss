@@ -1,16 +1,10 @@
+@use 'tokens' as *;
+
 mat-card {
     border-radius: 14px;
     box-shadow: 0 4px 24px 0 rgba(80, 106, 139, 0.08);
     border: none;
     padding: 20px 22px 18px 22px;
-}
-
-.card-title {
-    font-size: 1.17rem;
-    font-weight: 600;
-    color: #22294a;
-    margin-bottom: 18px;
-    letter-spacing: 0.01em;
 }
 
 .insights-loader {
@@ -19,7 +13,7 @@ mat-card {
     justify-content: center;
     gap: 12px;
     padding: 32px 0;
-    color: #6d748a;
+    color: $color-text-muted;
 }
 
 .stat-tiles {
@@ -40,12 +34,12 @@ mat-card {
     .stat-value {
         font-size: 1.25rem;
         font-weight: 700;
-        color: #234392;
+        color: $color-brand;
     }
 
     .stat-label {
         font-size: 0.82rem;
-        color: #6d748a;
+        color: $color-text-muted;
     }
 }
 
@@ -62,14 +56,14 @@ mat-card {
     gap: 8px;
     font-size: 0.95rem;
     font-weight: 600;
-    color: #22294a;
+    color: $color-text;
     margin-bottom: 10px;
 
     mat-icon {
         font-size: 20px;
         width: 20px;
         height: 20px;
-        color: #234392;
+        color: $color-brand;
     }
 }
 
@@ -87,27 +81,27 @@ mat-card {
         border-radius: 6px;
 
         &:nth-child(odd) {
-            background: #f8faff;
+            background: $color-surface-stripe;
         }
     }
 }
 
 .source-name,
 .district-name {
-    color: #22294a;
+    color: $color-text;
     font-size: 0.9rem;
 }
 
 .source-count {
     font-weight: 600;
-    color: #234392;
+    color: $color-brand;
 }
 
 .district-price {
     font-weight: 600;
 
     &.cheap {
-        color: #1d7a46;
+        color: $color-positive-strong;
     }
 
     &.expensive {
@@ -137,19 +131,19 @@ mat-card {
     }
 
     th {
-        color: #6d748a;
+        color: $color-text-muted;
         font-weight: 600;
         font-size: 0.8rem;
         text-transform: uppercase;
         letter-spacing: 0.04em;
-        border-bottom: 1px solid #e8eaf4;
+        border-bottom: 1px solid $color-border;
     }
 
     tbody tr {
         border-bottom: 1px solid #f0f2fa;
 
         &:hover {
-            background: #f8faff;
+            background: $color-surface-stripe;
         }
     }
 
@@ -163,7 +157,7 @@ mat-card {
         text-overflow: ellipsis;
 
         a {
-            color: #234392;
+            color: $color-brand;
             text-decoration: none;
             font-weight: 500;
 
@@ -179,12 +173,12 @@ mat-card {
     padding: 3px 9px;
     border-radius: 12px;
     background: #e2f5ea;
-    color: #1d7a46;
+    color: $color-positive-strong;
     font-weight: 700;
     font-size: 0.82rem;
 }
 
-@media (max-width: 700px) {
+@media (max-width: $breakpoint-tablet) {
     mat-card {
         padding: 14px;
     }
@@ -215,7 +209,7 @@ mat-card {
     }
 }
 
-@media (max-width: 480px) {
+@media (max-width: $breakpoint-phone) {
     .stat-tiles {
         grid-template-columns: 1fr 1fr;
     }

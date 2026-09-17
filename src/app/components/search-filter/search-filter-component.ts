@@ -1,35 +1,32 @@
-import { FormsModule } from '@angular/forms';
-import { Component, Output, EventEmitter } from '@angular/core';
+import { Component, input, output } from '@angular/core';
 import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
-import { CalculateStatisticsService } from '../../services/calculate-statistics';
 import { cityEnum } from '../../models/enums/city.enum';
 
+/**
+ * Presentational only: it takes the current selection in and emits the next one out.
+ *
+ * It used to read the selection straight off CalculateStatisticsService and emit to
+ * the dashboard, which then wrote back to that same singleton - a full circle for a
+ * value the component already had.
+ */
 @Component({
     selector: 'app-search-filter',
-
     imports: [
         MatFormFieldModule,
-        MatInputModule,
-        MatSelectModule,
-        FormsModule
+        MatSelectModule
     ],
     templateUrl: './search-filter-component.html',
     styleUrl: './search-filter-component.scss'
 })
 export class SearchFilterComponent {
 
-    @Output() groupByTypeChange = new EventEmitter<string | null>();
-    @Output() cityChange = new EventEmitter<cityEnum>();
-    cityList = Object.values(cityEnum);
+    readonly groupedBy = input.required<string>();
+    readonly city = input.required<cityEnum>();
+    readonly groupByTypes = input.required<readonly string[]>();
 
-    constructor(public readonly calculateStatisticsService: CalculateStatisticsService) {   }
+    readonly groupByTypeChange = output<string>();
+    readonly cityChange = output<cityEnum>();
 
-    public onGroupByTypeChange(value: string | null) {
-        this.groupByTypeChange.emit(value);
-    }
-    public onCityChange(value: cityEnum) {
-        this.cityChange.emit(value);
-    }
+    readonly cityList = Object.values(cityEnum);
 }

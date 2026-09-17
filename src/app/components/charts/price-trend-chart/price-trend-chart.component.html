@@ -1,6 +1,6 @@
 <mat-card>
     <div class="card-title">Average price per m² over time</div>
-    @if (timeline().length > 0) {
+    @if (points().length > 0) {
     <div class="chart-wrapper">
         <canvas baseChart type="bar" [data]="chartData()" [options]="chartOptions"></canvas>
     </div>

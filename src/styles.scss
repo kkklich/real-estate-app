@@ -1,4 +1,20 @@
-@import '@angular/material/prebuilt-themes/indigo-pink.css';
+@use 'tokens' as *;
+
+/* The Material prebuilt theme is loaded via angular.json "styles" alongside
+   maplibre-gl.css - Sass @import is deprecated and plain CSS belongs there. */
+
+/* Page base, as the Angular Material setup expects. Without it the body kept the browser's
+   8px margin (a white frame around the full-width toolbar) and plain text fell back to the
+   default serif font. Roboto is used when installed; nothing is fetched from a font CDN. */
+html,
+body {
+    height: 100%;
+}
+
+body {
+    margin: 0;
+    font-family: Roboto, "Helvetica Neue", Arial, sans-serif;
+}
 
 /* top navigation toolbar */
 .app-nav {
@@ -14,21 +30,45 @@
     background-color: rgba(255, 255, 255, 0.18);
 }
 
-/* style the overlay panel (overlay is outside component, so styles must be global) */
+/* Style the overlay panel: the overlay renders outside the component, so these
+   styles cannot live in a component stylesheet. */
 .select-panel.mat-mdc-select-panel,
 .select-panel {
-    /* use your preferred blue */
     background-color: #ffffff !important;
-    color: black !important;
+    color: $color-text !important;
 }
 
-/* options text */
 .select-panel .mat-mdc-option {
-    color: black !important;
+    color: $color-text !important;
 }
 
-/* hovered / active option keep readable */
+/* Grey, not white-on-white: the previous rgba(255,255,255,0.12) was invisible
+   against the white panel above it, so the hovered option read as unhighlighted. */
 .select-panel .mat-mdc-option.mat-mdc-active,
 .select-panel .mat-mdc-option:hover {
-    background-color: rgba(255, 255, 255, 0.12) !important;
+    background-color: $color-subtle !important;
+}
+
+/* Content for screen readers only - labels a control or a state that is conveyed
+   visually by an icon, a spinner or position alone. */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* Card heading shared by every dashboard and property card. It was copy-pasted,
+   byte for byte, into eight component stylesheets. */
+.card-title {
+    font-size: 1.17rem;
+    font-weight: 600;
+    color: $color-text;
+    margin-bottom: 18px;
+    letter-spacing: 0.01em;
 }

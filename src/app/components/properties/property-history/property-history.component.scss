@@ -1,3 +1,5 @@
+@use 'tokens' as *;
+
 .property-history {
     padding: 22px 26px 40px 26px;
     display: flex;
@@ -24,23 +26,15 @@ mat-card {
 .offer-title {
     font-size: 1.35rem;
     font-weight: 600;
-    color: #22294a;
+    color: $color-text;
     margin: 0 0 6px 0;
 }
 
 .offer-meta {
-    color: #6d748a;
+    color: $color-text-muted;
     display: flex;
     gap: 6px;
     flex-wrap: wrap;
-}
-
-.card-title {
-    font-size: 1.17rem;
-    font-weight: 600;
-    color: #22294a;
-    margin-bottom: 18px;
-    letter-spacing: 0.01em;
 }
 
 .details-grid {
@@ -60,13 +54,13 @@ mat-card {
         font-size: 0.76rem;
         text-transform: uppercase;
         letter-spacing: 0.04em;
-        color: #9aa0b4;
+        color: $color-text-faint;
     }
 
     dd {
         margin: 0;
         font-size: 0.98rem;
-        color: #22294a;
+        color: $color-text;
         overflow-wrap: anywhere;
 
         &.strong {
@@ -74,7 +68,7 @@ mat-card {
         }
 
         a {
-            color: #234392;
+            color: $color-brand;
         }
     }
 }
@@ -82,13 +76,13 @@ mat-card {
 .detail-description {
     margin-top: 20px;
     padding-top: 16px;
-    border-top: 1px solid #eef0f6;
+    border-top: 1px solid $color-subtle;
 
-    dt {
+    .section-title {
         font-size: 0.76rem;
         text-transform: uppercase;
         letter-spacing: 0.04em;
-        color: #9aa0b4;
+        color: $color-text-faint;
         margin-bottom: 8px;
     }
 
@@ -111,7 +105,7 @@ mat-card {
     align-items: center;
     justify-content: center;
     height: 320px;
-    color: #6d748a;
+    color: $color-text-muted;
 }
 
 .state-box {
@@ -119,10 +113,10 @@ mat-card {
     align-items: center;
     justify-content: center;
     min-height: 200px;
-    color: #6d748a;
+    color: $color-text-muted;
 
     &.error {
-        color: #c0392b;
+        color: $color-danger;
     }
 }
 
@@ -140,22 +134,22 @@ table.results {
         padding: 10px 14px;
         text-align: left;
         white-space: nowrap;
-        border-bottom: 1px solid #eef0f6;
+        border-bottom: 1px solid $color-subtle;
     }
 
     th {
-        color: #6d748a;
+        color: $color-text-muted;
         font-weight: 600;
-        background: #f7f8fc;
+        background: $color-surface-header;
     }
 
     tbody tr:hover {
-        background: #f9fbff;
+        background: $color-surface-hover;
     }
 }
 
 .offer-link {
-    color: #234392;
+    color: $color-brand;
     font-weight: 600;
     text-decoration: none;
 
@@ -168,20 +162,20 @@ table.results {
     font-weight: 600;
 
     &.down {
-        color: #1e9e5a;
+        color: $color-positive;
     }
 
     &.up {
-        color: #c0392b;
+        color: $color-danger;
     }
 
     &.flat {
-        color: #9aa0b4;
+        color: $color-text-faint;
         font-weight: 400;
     }
 }
 
-@media (max-width: 700px) {
+@media (max-width: $breakpoint-tablet) {
     .chart-wrapper,
     .chart-empty {
         height: 240px;

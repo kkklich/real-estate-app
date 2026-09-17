@@ -1,0 +1,63 @@
+<mat-card>
+    <div class="card-title">
+        Price drops since the previous scrape: {{ stats.city() }}
+    </div>
+
+    @if (loading()) {
+    <div class="drops-loader" role="status" aria-live="polite">
+        <mat-spinner diameter="30"></mat-spinner>
+        <span>Loading price drops...</span>
+    </div>
+    } @else if (error()) {
+    @let message = error()!;
+    <div class="drops-loader" role="alert">
+        <mat-icon aria-hidden="true" svgIcon="error_outline"></mat-icon>
+        <span>{{ message }}</span>
+    </div>
+    } @else if (drops()) {
+    @let rows = drops()!;
+
+    @if (rows.length > 0) {
+    <div class="drops-table-wrapper">
+        <table class="drops-table">
+            <thead>
+                <tr>
+                    <th scope="col">Offer</th>
+                    <th scope="col">District</th>
+                    <th scope="col" class="num">Area</th>
+                    <th scope="col" class="num">Was</th>
+                    <th scope="col" class="num">Now</th>
+                    <th scope="col" class="num">Drop</th>
+                    <th scope="col" class="num">Change</th>
+                    <th scope="col">Source</th>
+                </tr>
+            </thead>
+            <tbody>
+                @for (drop of rows; track drop.url) {
+                <tr>
+                    <td class="drop-title">
+                        <a [href]="drop.url" target="_blank" rel="noopener noreferrer">{{ drop.title }}</a>
+                    </td>
+                    <td>{{ drop.district || '—' }}</td>
+                    <td class="num">{{ drop.area | number:'1.0-1' }} m²</td>
+                    <td class="num was">{{ drop.previousPrice | number:'1.0-0' }} PLN</td>
+                    <td class="num now">{{ drop.currentPrice | number:'1.0-0' }} PLN</td>
+                    <td class="num">−{{ drop.dropAmount | number:'1.0-0' }} PLN</td>
+                    <td class="num">
+                        <span class="drop-badge">−{{ drop.dropPercent | number:'1.0-1' }}%</span>
+                    </td>
+                    <td>{{ portalName(drop.webName) }}</td>
+                </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    } @else {
+    <div class="drops-empty">
+        <mat-icon aria-hidden="true" svgIcon="trending_flat"></mat-icon>
+        <span>No price drops between the two most recent scrapes.</span>
+    </div>
+    }
+
+    }
+</mat-card>

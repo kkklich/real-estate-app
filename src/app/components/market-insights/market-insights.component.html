@@ -1,15 +1,21 @@
 <mat-card>
     <div class="card-title">
-        Market insights: {{ calculateStatisticsService.city() }}
+        Market insights: {{ stats.city() }}
     </div>
 
     @if (loading()) {
-    <div class="insights-loader">
+    <div class="insights-loader" role="status" aria-live="polite">
         <mat-spinner diameter="30"></mat-spinner>
         <span>Loading market insights...</span>
     </div>
-    } @else {
-    @if (insights(); as data) {
+    } @else if (error()) {
+    @let message = error()!;
+    <div class="insights-loader" role="alert">
+        <mat-icon aria-hidden="true" svgIcon="error_outline"></mat-icon>
+        <span>{{ message }}</span>
+    </div>
+    } @else if (insights()) {
+    @let data = insights()!;
 
     <div class="stat-tiles">
         <div class="stat-tile">
@@ -49,6 +55,7 @@
             </ul>
         </div>
 
+        @if (cheapestDistricts().length > 0) {
         <div class="insights-section">
             <div class="section-title">
                 Cheapest districts (PLN/m²)
@@ -76,6 +83,7 @@
                 }
             </ul>
         </div>
+        }
     </div>
 
     @if (data.bestDeals.length > 0) {
@@ -86,14 +94,14 @@
         <table class="deals-table">
             <thead>
                 <tr>
-                    <th>Offer</th>
-                    <th>District</th>
-                    <th class="num">Area</th>
-                    <th class="num">Price</th>
-                    <th class="num">Price / m²</th>
-                    <th class="num">District median</th>
-                    <th class="num">Below median</th>
-                    <th>Source</th>
+                    <th scope="col">Offer</th>
+                    <th scope="col">District</th>
+                    <th scope="col" class="num">Area</th>
+                    <th scope="col" class="num">Price</th>
+                    <th scope="col" class="num">Price / m²</th>
+                    <th scope="col" class="num">District median</th>
+                    <th scope="col" class="num">Below median</th>
+                    <th scope="col">Source</th>
                 </tr>
             </thead>
             <tbody>
@@ -118,11 +126,5 @@
     </div>
     }
 
-    } @else {
-    <div class="insights-loader">
-        <mat-icon>error_outline</mat-icon>
-        <span>Market insights unavailable</span>
-    </div>
-    }
     }
 </mat-card>

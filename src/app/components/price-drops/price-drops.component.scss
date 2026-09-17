@@ -1,0 +1,121 @@
+@use 'tokens' as *;
+
+mat-card {
+    border-radius: 14px;
+    box-shadow: 0 4px 24px 0 rgba(80, 106, 139, 0.08);
+    border: none;
+    padding: 20px 22px 18px 22px;
+}
+
+.drops-loader,
+.drops-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 32px 0;
+    color: $color-text-muted;
+}
+
+.drops-table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.drops-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.88rem;
+
+    th,
+    td {
+        padding: 9px 12px;
+        text-align: left;
+        white-space: nowrap;
+    }
+
+    th {
+        color: $color-text-muted;
+        font-weight: 600;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        border-bottom: 1px solid $color-border;
+    }
+
+    tbody tr {
+        border-bottom: 1px solid #f0f2fa;
+
+        &:hover {
+            background: $color-surface-stripe;
+        }
+    }
+
+    .num {
+        text-align: right;
+    }
+
+    .was {
+        color: $color-text-muted;
+        text-decoration: line-through;
+    }
+
+    .now {
+        font-weight: 600;
+        color: $color-text;
+    }
+
+    .drop-title {
+        max-width: 320px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+
+        a {
+            color: $color-brand;
+            text-decoration: none;
+            font-weight: 500;
+
+            &:hover {
+                text-decoration: underline;
+            }
+        }
+    }
+}
+
+.drop-badge {
+    display: inline-block;
+    padding: 3px 9px;
+    border-radius: 12px;
+    background: #e2f5ea;
+    color: $color-positive-strong;
+    font-weight: 700;
+    font-size: 0.82rem;
+}
+
+@media (max-width: $breakpoint-tablet) {
+    mat-card {
+        padding: 14px;
+    }
+
+    .drops-table th,
+    .drops-table td {
+        padding: 7px 8px;
+        font-size: 0.8rem;
+    }
+
+    .drops-table .drop-title {
+        max-width: 140px;
+    }
+}
+
+@media (max-width: $breakpoint-phone) {
+    .drops-table th,
+    .drops-table td {
+        padding: 6px 6px;
+        font-size: 0.75rem;
+    }
+
+    .drops-table .drop-title {
+        max-width: 100px;
+    }
+}

@@ -1,9 +1,9 @@
 <div class="selects-container">
     <mat-form-field appearance="fill" class="select-field">
         <mat-label>Group by</mat-label>
-        <mat-select class="select" panelClass="select-panel" [value]="calculateStatisticsService.groupedBy()"
-            (selectionChange)="onGroupByTypeChange($event.value)">
-            @for (type of calculateStatisticsService.groupByTypes; track type) {
+        <mat-select class="select" panelClass="select-panel" [value]="groupedBy()"
+            (selectionChange)="groupByTypeChange.emit($event.value)">
+            @for (type of groupByTypes(); track type) {
             <mat-option [value]="type">
                 {{ type }}
             </mat-option>
@@ -13,10 +13,11 @@
 
     <mat-form-field appearance="fill" class="select-field">
         <mat-label>Select city</mat-label>
-        <mat-select [value]="calculateStatisticsService.city()" (selectionChange)="onCityChange($event.value)">
-            @for (city of cityList; track city) {
-            <mat-option [value]="city">
-                {{ city }}
+        <mat-select panelClass="select-panel" [value]="city()"
+            (selectionChange)="cityChange.emit($event.value)">
+            @for (option of cityList; track option) {
+            <mat-option [value]="option">
+                {{ option }}
             </mat-option>
             }
         </mat-select>

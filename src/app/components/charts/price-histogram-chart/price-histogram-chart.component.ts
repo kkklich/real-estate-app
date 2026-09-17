@@ -2,6 +2,7 @@ import { Component, computed, input } from '@angular/core';
 import { MatCardModule } from '@angular/material/card';
 import { BaseChartDirective } from 'ng2-charts';
 import { ChartData, ChartOptions } from 'chart.js';
+import { CHART_COLORS } from '../chart-theme';
 import { HistogramBin } from '../../../models/dashboardCharts';
 
 @Component({
@@ -21,7 +22,7 @@ export class PriceHistogramChartComponent {
                 data: this.bins().map(b => b.count),
                 label: 'Offers',
                 backgroundColor: '#4d7cd6',
-                hoverBackgroundColor: '#234392',
+                hoverBackgroundColor: CHART_COLORS.brand,
                 borderRadius: 3
             }
         ]
@@ -42,14 +43,14 @@ export class PriceHistogramChartComponent {
         scales: {
             x: {
                 grid: { display: false },
-                ticks: { color: '#6d748a', maxRotation: 60, minRotation: 45 },
-                title: { display: true, text: 'PLN / m²', color: '#6d748a' }
+                ticks: { color: CHART_COLORS.textMuted, maxRotation: 60, minRotation: 45 },
+                title: { display: true, text: 'PLN / m²', color: CHART_COLORS.textMuted }
             },
             y: {
                 beginAtZero: true,
-                grid: { color: '#e9ecf6' },
-                ticks: { color: '#6d748a' },
-                title: { display: true, text: 'offers', color: '#6d748a' }
+                grid: { color: CHART_COLORS.grid },
+                ticks: { color: CHART_COLORS.textMuted },
+                title: { display: true, text: 'offers', color: CHART_COLORS.textMuted }
             }
         }
     };

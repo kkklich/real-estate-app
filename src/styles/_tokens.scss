@@ -1,0 +1,29 @@
+// Design tokens shared by the global and component stylesheets.
+//
+// Every value is one the stylesheets already used, byte for byte; moving them here changed no
+// rendered CSS. Load with `@use 'tokens' as *;` (src/styles is on the Sass include path).
+// Chart.js and the map colour their canvases from TypeScript and do not read these.
+
+// Text
+$color-text: #22294a;              // headings and primary text
+$color-text-muted: #6d748a;        // labels, secondary text, placeholders
+$color-text-faint: #9aa0b4;        // de-emphasised text: detail labels, "no change" dashes
+$color-brand: #234392;             // brand blue: logo, emphasis, hover, focus ring
+
+// Status
+$color-danger: #c0392b;            // errors, price increases
+$color-positive: #1e9e5a;          // price decreases in tables
+$color-positive-strong: #1d7a46;   // "cheap" and discount text on light badges
+
+// Lines and surfaces
+$color-border: #e8eaf4;            // toolbar and table-header borders
+$color-subtle: #eef0f6;            // row dividers, section rules, quiet hover fills
+$color-surface-header: #f7f8fc;    // table header background
+$color-surface-hover: #f9fbff;     // table row hover
+$color-surface-stripe: #f8faff;    // zebra stripes, list hover
+
+// Breakpoints (max-width). The filter bar used to switch at 600px and 768px; it now follows
+// $breakpoint-tablet like the dashboard grid, so its padding lines up with the cards below.
+$breakpoint-phone: 480px;
+$breakpoint-tablet: 700px;
+$breakpoint-desktop: 1100px;

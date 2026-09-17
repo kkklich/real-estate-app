@@ -1,5 +1,12 @@
 <div class="property-list">
-    <h1 class="page-title">Properties</h1>
+    <div class="page-header">
+        <h1 class="page-title">Properties</h1>
+        <button mat-stroked-button color="primary" type="button" class="map-toggle" (click)="toggleMap()"
+            [attr.aria-expanded]="mapOpen()" [attr.aria-controls]="mapOpen() ? 'properties-map' : null">
+            <mat-icon aria-hidden="true" svgIcon="map"></mat-icon>
+            {{ mapOpen() ? 'Hide map' : 'Show on map' }}
+        </button>
+    </div>
 
     <div class="filters">
         <mat-form-field appearance="outline">
@@ -50,14 +57,57 @@
         <button mat-flat-button color="primary" class="apply-btn" (click)="applyFilters()">Apply</button>
     </div>
 
-    @if (loading()) {
-    <div class="state-box">
+    @if (mapOpen()) {
+    <section id="properties-map" class="map-panel" aria-labelledby="properties-map-title">
+        <h2 id="properties-map-title" class="sr-only">Map of the listed offers</h2>
+        @if (mapPoints.loading()) {
+        <div class="state-box map-slot" role="status" aria-live="polite">
+            <mat-spinner diameter="36"></mat-spinner>
+            <span>Loading the map…</span>
+        </div>
+        } @else if (mapPoints.error()) {
+        <div class="state-box error" role="alert">
+            <span>{{ mapPoints.error() }}</span>
+            <button mat-stroked-button color="primary" type="button" (click)="retryMap()">Retry</button>
+        </div>
+        } @else if (mapMatches(); as matches) {
+        <p class="map-summary" role="status">
+            <strong>{{ matches.length | number }}</strong>
+            {{ matches.length === 1 ? 'offer' : 'offers' }} from the latest scrape
+            {{ matches.length === 1 ? 'matches' : 'match' }} the applied filters.
+            <span class="map-summary__note">Older listings and offers without a location are not on the map.</span>
+        </p>
+        @if (matches.length > 0) {
+        @defer (on immediate) {
+        <app-map-view class="map-slot" [points]="matches" groupedBy="pricePerMeter"></app-map-view>
+        } @loading (after 100ms; minimum 500ms) {
+        <div class="state-box map-slot" role="status" aria-live="polite">
+            <mat-spinner diameter="30"></mat-spinner>
+            <span>Rendering the map…</span>
+        </div>
+        } @error {
+        <div class="state-box error" role="alert">
+            <span>The map could not be loaded. Reload the page to try again.</span>
+        </div>
+        }
+        }
+        }
+    </section>
+    }
+
+    @if (properties.loading()) {
+    <div class="state-box" role="status" aria-live="polite">
         <mat-spinner diameter="42"></mat-spinner>
+        <span class="sr-only">Loading properties</span>
     </div>
-    } @else if (error()) {
-    <div class="state-box error">{{ error() }}</div>
-    } @else if (result()) {
-    @if (result(); as res) {
+    } @else if (properties.error()) {
+    @let message = properties.error()!;
+    <div class="state-box error" role="alert">
+        <span>{{ message }}</span>
+        <button mat-stroked-button color="primary" (click)="retry()">Retry</button>
+    </div>
+    } @else if (properties.data()) {
+    @let res = properties.data()!;
     @if (res.items.length === 0) {
     <div class="state-box">No properties match the current filters.</div>
     } @else {
@@ -66,16 +116,18 @@
             <thead>
                 <tr>
                     @for (col of columns; track col.key) {
-                    <th (click)="sortByColumn(col.key)" class="sortable">
-                        {{ col.label }}
-                        @if (sortBy() === col.key) {
-                        <span class="sort-arrow">{{ sortDir() === 'asc' ? '▲' : '▼' }}</span>
-                        }
+                    <th scope="col" class="sortable" [attr.aria-sort]="ariaSort(col.key)">
+                        <button type="button" class="sort-btn" (click)="sortByColumn(col.key)">
+                            {{ col.label }}
+                            @if (sortBy() === col.key) {
+                            <span class="sort-arrow" aria-hidden="true">{{ sortDir() === 'asc' ? '▲' : '▼' }}</span>
+                            }
+                        </button>
                     </th>
                     }
-                    <th>Change</th>
-                    <th>Snapshots</th>
-                    <th></th>
+                    <th scope="col">Change</th>
+                    <th scope="col">Snapshots</th>
+                    <th scope="col"><span class="sr-only">Actions</span></th>
                 </tr>
             </thead>
             <tbody>
@@ -85,14 +137,15 @@
                     <td>{{ row.city }}</td>
                     <td>{{ row.district }}</td>
                     <td>{{ row.market }}</td>
-                    <td>{{ row.price | number:'1.0-2' }} zł</td>
-                    <td>{{ row.pricePerMeter | number:'1.0-2' }} zł</td>
+                    <td>{{ row.price | number:'1.0-0' }} PLN</td>
+                    <td>{{ row.pricePerMeter | number:'1.0-0' }} PLN</td>
                     <td>{{ row.area | number:'1.0-1' }} m²</td>
                     <td>{{ row.floor }}</td>
                     <td>
                         @if (row.priceChange) {
                         <span class="delta" [class.down]="row.priceChange < 0" [class.up]="row.priceChange > 0">
-                            {{ row.priceChange < 0 ? '▼' : '▲' }} {{ (row.priceChange | number:'1.0-2') }} zł
+                            <span aria-hidden="true">{{ row.priceChange < 0 ? '▼' : '▲' }}</span>
+                            {{ (row.priceChange | number:'1.0-0') }} PLN
                         </span>
                         } @else {
                         <span class="delta flat">—</span>
@@ -112,7 +165,6 @@
     <mat-paginator [length]="res.totalCount" [pageSize]="pageSize()" [pageIndex]="pageIndex()"
         [pageSizeOptions]="pageSizeOptions" (page)="onPage($event)" showFirstLastButtons>
     </mat-paginator>
-    }
     }
     }
 </div>

@@ -2,6 +2,7 @@ import { Component, computed, input } from '@angular/core';
 import { MatCardModule } from '@angular/material/card';
 import { BaseChartDirective } from 'ng2-charts';
 import { ChartData, ChartOptions } from 'chart.js';
+import { CHART_COLORS } from '../chart-theme';
 import { SplitSlice } from '../../../models/dashboardCharts';
 
 @Component({
@@ -17,7 +18,7 @@ export class SplitDonutChartComponent {
 
     private readonly palette = [
         '#4d7cd6', '#7fb069', '#e6a23c', '#c95d63',
-        '#8e7cc3', '#5bc0be', '#f28cb1', '#6d748a'
+        '#8e7cc3', '#5bc0be', '#f28cb1', CHART_COLORS.textMuted
     ];
 
     protected readonly chartData = computed<ChartData<'doughnut'>>(() => {
@@ -43,7 +44,7 @@ export class SplitDonutChartComponent {
             maintainAspectRatio: false,
             cutout: '62%',
             plugins: {
-                legend: { position: 'bottom', labels: { color: '#6d748a', usePointStyle: true, boxWidth: 8 } },
+                legend: { position: 'bottom', labels: { color: CHART_COLORS.textMuted, usePointStyle: true, boxWidth: 8 } },
                 tooltip: {
                     callbacks: {
                         label: (ctx) => {

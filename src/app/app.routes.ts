@@ -1,8 +1,15 @@
 import { Routes } from '@angular/router';
-import { DashboardComponent } from './components/dashboard/dashboard.component';
 
+// Every page is lazy, the dashboard included: it carries Chart.js and the dashboard widgets,
+// which /properties never needs. It is still the landing page, so its chunk is requested
+// straight after bootstrap - but it no longer inflates the bundle every route pays for.
 export const routes: Routes = [
-    { path: '', component: DashboardComponent },
+    {
+        path: '',
+        loadComponent: () =>
+            import('./components/dashboard/dashboard.component')
+                .then(m => m.DashboardComponent)
+    },
     {
         path: 'properties',
         loadComponent: () =>
