@@ -1,25 +1,8 @@
 <div class="selects-container">
-    <mat-form-field appearance="fill" class="select-field">
-        <mat-label>Group by</mat-label>
-        <mat-select class="select" panelClass="select-panel" [value]="groupedBy()"
-            (selectionChange)="groupByTypeChange.emit($event.value)">
-            @for (type of groupByTypes(); track type) {
-            <mat-option [value]="type">
-                {{ type }}
-            </mat-option>
-            }
-        </mat-select>
-    </mat-form-field>
-
-    <mat-form-field appearance="fill" class="select-field">
-        <mat-label>Select city</mat-label>
-        <mat-select panelClass="select-panel" [value]="city()"
-            (selectionChange)="cityChange.emit($event.value)">
-            @for (option of cityList; track option) {
-            <mat-option [value]="option">
-                {{ option }}
-            </mat-option>
-            }
-        </mat-select>
-    </mat-form-field>
+    <mat-button-toggle-group class="city-toggle" aria-label="City" hideSingleSelectionIndicator
+        [value]="city()" (change)="cityChange.emit($event.value)">
+        @for (option of cities; track option.value) {
+        <mat-button-toggle [value]="option.value">{{ option.label }}</mat-button-toggle>
+        }
+    </mat-button-toggle-group>
 </div>

@@ -48,10 +48,6 @@ export class DashboardComponent {
 
     readonly charts = this.stats.charts;
 
-    onGroupByTypeChange(type: string | null): void {
-        this.stats.groupedBy.set(type ?? 'market');
-    }
-
     onCityChange(city: cityEnum): void {
         if (city) {
             this.stats.city.set(city);

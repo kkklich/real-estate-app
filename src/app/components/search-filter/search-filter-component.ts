@@ -1,6 +1,5 @@
 import { Component, input, output } from '@angular/core';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatSelectModule } from '@angular/material/select';
+import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { cityEnum } from '../../models/enums/city.enum';
 
 /**
@@ -12,21 +11,19 @@ import { cityEnum } from '../../models/enums/city.enum';
  */
 @Component({
     selector: 'app-search-filter',
-    imports: [
-        MatFormFieldModule,
-        MatSelectModule
-    ],
+    imports: [MatButtonToggleModule],
     templateUrl: './search-filter-component.html',
     styleUrl: './search-filter-component.scss'
 })
 export class SearchFilterComponent {
 
-    readonly groupedBy = input.required<string>();
     readonly city = input.required<cityEnum>();
-    readonly groupByTypes = input.required<readonly string[]>();
 
-    readonly groupByTypeChange = output<string>();
     readonly cityChange = output<cityEnum>();
 
-    readonly cityList = Object.values(cityEnum);
+    // The enum values are what the API expects; the labels are what people read.
+    readonly cities: readonly { value: cityEnum; label: string }[] = [
+        { value: cityEnum.Katowice, label: 'Katowice' },
+        { value: cityEnum.Krakow, label: 'Kraków' }
+    ];
 }

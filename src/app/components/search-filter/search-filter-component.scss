@@ -6,57 +6,26 @@
     margin: 16px 0;
     padding: 20px;
     display: flex;
-    gap: 20px;
     align-items: center;
 
-    @media (max-width: $breakpoint-tablet) {
-        flex-direction: column;
-        align-items: stretch;
+    @media (max-width: $breakpoint-phone) {
+        padding: 16px;
     }
 }
 
-.select-field {
-    flex: 1;
-    min-width: 200px;
+.city-toggle {
+    background: white;
 
-    .mat-mdc-form-field {
-        background: white;
-        border-radius: 8px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        transition: all 0.2s ease;
+    .mat-button-toggle {
+        min-width: 120px;
+    }
+
+    @media (max-width: $breakpoint-phone) {
         width: 100%;
 
-        &:hover {
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-            transform: translateY(-1px);
+        .mat-button-toggle {
+            flex: 1;
+            min-width: 0;
         }
-
-        &.mdc-form-field--focused {
-            box-shadow: 0 6px 20px rgba(0, 123, 255, 0.25);
-            border-color: #007bff;
-        }
-    }
-
-    .mat-mdc-form-field-subscript-wrapper {
-        display: none;
-    }
-}
-
-.select-field:first-child {
-    margin-right: 20px;
-
-    @media (max-width: $breakpoint-tablet) {
-        margin-right: 0;
-    }
-}
-
-@media (max-width: $breakpoint-phone) {
-    .selects-container {
-        padding: 16px;
-        gap: 12px;
-    }
-
-    .select-field {
-        min-width: 0;
     }
 }

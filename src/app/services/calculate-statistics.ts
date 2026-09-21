@@ -34,19 +34,7 @@ export class CalculateStatisticsService {
     readonly charts = computed(() => this.dashboard.data()?.charts ?? null);
     readonly insights = computed(() => this.dashboard.data()?.insights ?? null);
 
-    readonly groupedBy = signal<string>('market');
     readonly city = signal<cityEnum>(cityEnum.Krakow);
-
-    readonly groupByTypes: readonly string[] = [
-        'price',
-        'pricePerMeter',
-        'floor',
-        'market',
-        'buildingType',
-        'area',
-        'private',
-        'location.district'
-    ];
 
     /** Bumped by reload() so a retry re-runs both requests for the current city. */
     private readonly reloadNonce = signal(0);
