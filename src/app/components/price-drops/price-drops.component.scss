@@ -1,4 +1,5 @@
 @use 'tokens' as *;
+@use 'stacked-table' as *;
 
 mat-card {
     border-radius: 14px;
@@ -97,25 +98,11 @@ mat-card {
         padding: 14px;
     }
 
-    .drops-table th,
-    .drops-table td {
-        padding: 7px 8px;
-        font-size: 0.8rem;
-    }
+    .drops-table {
+        @include stacked-table(3);
 
-    .drops-table .drop-title {
-        max-width: 140px;
-    }
-}
-
-@media (max-width: $breakpoint-phone) {
-    .drops-table th,
-    .drops-table td {
-        padding: 6px 6px;
-        font-size: 0.75rem;
-    }
-
-    .drops-table .drop-title {
-        max-width: 100px;
+        .drop-title a {
+            font-size: 0.95rem;
+        }
     }
 }

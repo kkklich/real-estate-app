@@ -1,4 +1,5 @@
 @use 'tokens' as *;
+@use 'stacked-table' as *;
 
 mat-card {
     border-radius: 14px;
@@ -193,19 +194,12 @@ mat-card {
         gap: 16px;
     }
 
-    .deals-table th,
-    .deals-table td {
-        padding: 7px 8px;
-        font-size: 0.8rem;
-    }
+    .deals-table {
+        @include stacked-table(3);
 
-    .deals-table .deal-title {
-        max-width: 140px;
-    }
-
-    .deals-table .col-area,
-    .deals-table .col-floor {
-        display: none;
+        .deal-title a {
+            font-size: 0.95rem;
+        }
     }
 }
 
@@ -214,18 +208,7 @@ mat-card {
         grid-template-columns: 1fr 1fr;
     }
 
-    .deals-table th,
-    .deals-table td {
-        padding: 6px 6px;
-        font-size: 0.75rem;
-    }
-
-    .deals-table .deal-title {
-        max-width: 100px;
-    }
-
-    .deals-table .col-median,
-    .deals-table .col-source {
-        display: none;
+    .stat-tile .stat-value {
+        font-size: 1.1rem;
     }
 }

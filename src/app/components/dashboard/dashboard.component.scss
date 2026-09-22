@@ -214,8 +214,9 @@ mat-toolbar {
     }
 }
 
-@media (max-width: $breakpoint-phone) {
-    mat-toolbar .logo {
-        font-size: 1.2rem;
+// On a phone this second bar only repeats the app bar above it, and costs a screen row.
+@media (max-width: $breakpoint-tablet) {
+    mat-toolbar {
+        display: none;
     }
 }

@@ -111,6 +111,23 @@
     @if (res.items.length === 0) {
     <div class="state-box">No properties match the current filters.</div>
     } @else {
+    <!-- Card view hides the sortable headers, so phones sort from here instead. -->
+    <div class="mobile-sort">
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+            <mat-label>Sort by</mat-label>
+            <mat-select panelClass="select-panel" [value]="sortBy()" (selectionChange)="sortByColumn($event.value)">
+                <mat-option value="lastSeen">Last seen</mat-option>
+                @for (col of columns; track col.key) {
+                <mat-option [value]="col.key">{{ col.label }}</mat-option>
+                }
+            </mat-select>
+        </mat-form-field>
+        <button mat-stroked-button type="button" class="sort-dir" (click)="toggleSortDir()"
+            [attr.aria-label]="sortDir() === 'asc' ? 'Ascending, switch to descending' : 'Descending, switch to ascending'">
+            <span aria-hidden="true">{{ sortDir() === 'asc' ? '▲ Asc' : '▼ Desc' }}</span>
+        </button>
+    </div>
+
     <div class="table-wrapper">
         <table class="results">
             <thead>
@@ -133,15 +150,15 @@
             <tbody>
                 @for (row of res.items; track row.id) {
                 <tr>
-                    <td class="title-cell">{{ row.title }}</td>
-                    <td>{{ row.city }}</td>
-                    <td>{{ row.district }}</td>
-                    <td>{{ row.market }}</td>
-                    <td>{{ row.price | number:'1.0-0' }} PLN</td>
-                    <td>{{ row.pricePerMeter | number:'1.0-0' }} PLN</td>
-                    <td>{{ row.area | number:'1.0-1' }} m²</td>
-                    <td>{{ row.floor }}</td>
-                    <td>
+                    <td class="title-cell stack-full">{{ row.title }}</td>
+                    <td data-label="City">{{ row.city }}</td>
+                    <td data-label="District">{{ row.district || '—' }}</td>
+                    <td data-label="Market">{{ row.market }}</td>
+                    <td data-label="Price" class="price-cell">{{ row.price | number:'1.0-0' }} PLN</td>
+                    <td data-label="Price / m²">{{ row.pricePerMeter | number:'1.0-0' }} PLN</td>
+                    <td data-label="Area">{{ row.area | number:'1.0-1' }} m²</td>
+                    <td data-label="Floor">{{ row.floor }}</td>
+                    <td data-label="Change">
                         @if (row.priceChange) {
                         <span class="delta" [class.down]="row.priceChange < 0" [class.up]="row.priceChange > 0">
                             <span aria-hidden="true">{{ row.priceChange < 0 ? '▼' : '▲' }}</span>
@@ -151,8 +168,8 @@
                         <span class="delta flat">—</span>
                         }
                     </td>
-                    <td class="center">{{ row.snapshotCount }}</td>
-                    <td>
+                    <td class="center" data-label="Snapshots">{{ row.snapshotCount }}</td>
+                    <td class="actions-cell stack-full">
                         <a mat-stroked-button color="primary" routerLink="/properties/history"
                             [queryParams]="{ city: row.city, url: row.url }">History</a>
                     </td>

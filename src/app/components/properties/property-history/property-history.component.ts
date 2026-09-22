@@ -111,6 +111,10 @@ export class PropertyHistoryComponent {
             .sort((a, b) => a.at - b.at)
     );
 
+    /**
+     * One line: price / m² is the price over a fixed area, so a second line only ever
+     * ran parallel to the first. It is kept on each point and shown in the tooltip.
+     */
     protected readonly chartData = computed<ChartData>(() => {
         const points = this.points();
         return {
@@ -118,26 +122,15 @@ export class PropertyHistoryComponent {
                 {
                     type: 'line' as const,
                     label: 'Price (PLN)',
-                    data: points.map(p => ({ x: p.at, y: p.price })),
-                    yAxisID: 'y',
+                    data: points.map(p => ({ x: p.at, y: p.price, perMeter: p.pricePerMeter })),
                     borderColor: CHART_COLORS.brand,
                     backgroundColor: 'rgba(35, 67, 146, 0.08)',
                     pointRadius: 3,
                     pointHoverRadius: 5,
-                    tension: 0.3,
+                    // Monotone never overshoots: a plain tension curve bulged above two
+                    // equal prices and drew a rise that never happened.
+                    cubicInterpolationMode: 'monotone',
                     fill: true
-                },
-                {
-                    type: 'line' as const,
-                    label: 'Price / m² (PLN)',
-                    data: points.map(p => ({ x: p.at, y: p.pricePerMeter })),
-                    yAxisID: 'y1',
-                    borderColor: '#e08a1e',
-                    backgroundColor: 'rgba(224, 138, 30, 0.06)',
-                    pointRadius: 3,
-                    pointHoverRadius: 5,
-                    tension: 0.3,
-                    fill: false
                 }
             ]
         };
@@ -148,11 +141,15 @@ export class PropertyHistoryComponent {
         maintainAspectRatio: false,
         interaction: { mode: 'index', intersect: false },
         plugins: {
-            legend: { position: 'bottom', labels: { color: CHART_COLORS.textMuted, usePointStyle: true } },
+            legend: { display: false },
             tooltip: {
                 callbacks: {
                     title: items => new Date(items[0].parsed.x).toLocaleString('pl-PL'),
-                    label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y?.toLocaleString('pl-PL')}`
+                    label: ctx => ` Price: ${ctx.parsed.y?.toLocaleString('pl-PL')} PLN`,
+                    afterLabel: ctx => {
+                        const perMeter = (ctx.raw as { perMeter?: number }).perMeter;
+                        return perMeter == null ? '' : ` Price / m²: ${perMeter.toLocaleString('pl-PL')} PLN`;
+                    }
                 }
             }
         },
@@ -163,6 +160,9 @@ export class PropertyHistoryComponent {
                 ticks: {
                     color: CHART_COLORS.textMuted,
                     maxTicksLimit: 12,
+                    // Level labels, thinned to fit: slanted dates were hard to read on a phone.
+                    maxRotation: 0,
+                    autoSkipPadding: 12,
                     callback: value => new Date(Number(value)).toLocaleDateString('pl-PL')
                 }
             },
@@ -173,14 +173,6 @@ export class PropertyHistoryComponent {
                 grid: { color: CHART_COLORS.grid },
                 ticks: { color: CHART_COLORS.brand, callback: value => Number(value).toLocaleString('pl-PL') },
                 title: { display: true, text: 'PLN', color: CHART_COLORS.textMuted }
-            },
-            y1: {
-                position: 'right',
-                beginAtZero: false,
-                grace: '15%',
-                grid: { display: false },
-                ticks: { color: '#e08a1e', callback: value => Number(value).toLocaleString('pl-PL') },
-                title: { display: true, text: 'PLN / m²', color: CHART_COLORS.textMuted }
             }
         }
     };

@@ -35,18 +35,18 @@
             <tbody>
                 @for (drop of rows; track drop.url) {
                 <tr>
-                    <td class="drop-title">
+                    <td class="drop-title stack-full">
                         <a [href]="drop.url" target="_blank" rel="noopener noreferrer">{{ drop.title }}</a>
                     </td>
-                    <td>{{ drop.district || '—' }}</td>
-                    <td class="num">{{ drop.area | number:'1.0-1' }} m²</td>
-                    <td class="num was">{{ drop.previousPrice | number:'1.0-0' }} PLN</td>
-                    <td class="num now">{{ drop.currentPrice | number:'1.0-0' }} PLN</td>
-                    <td class="num">−{{ drop.dropAmount | number:'1.0-0' }} PLN</td>
-                    <td class="num">
+                    <td data-label="District">{{ drop.district || '—' }}</td>
+                    <td class="num" data-label="Area">{{ drop.area | number:'1.0-1' }} m²</td>
+                    <td class="num" data-label="Was"><span class="was">{{ drop.previousPrice | number:'1.0-0' }} PLN</span></td>
+                    <td class="num now" data-label="Now">{{ drop.currentPrice | number:'1.0-0' }} PLN</td>
+                    <td class="num" data-label="Drop">−{{ drop.dropAmount | number:'1.0-0' }} PLN</td>
+                    <td class="num" data-label="Change">
                         <span class="drop-badge">−{{ drop.dropPercent | number:'1.0-1' }}%</span>
                     </td>
-                    <td>{{ portalName(drop.webName) }}</td>
+                    <td data-label="Source">{{ portalName(drop.webName) }}</td>
                 </tr>
                 }
             </tbody>

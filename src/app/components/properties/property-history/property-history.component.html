@@ -154,11 +154,11 @@
                 <tbody>
                     @for (e of h.entries; track e.date + e.url) {
                     <tr>
-                        <td>{{ (validDate(e.date) | date:'dd.MM.yyyy HH:mm') ?? '—' }}</td>
-                        <td>{{ e.price | number:'1.0-0' }} PLN</td>
-                        <td>{{ e.pricePerMeter | number:'1.0-0' }} PLN</td>
-                        <td>{{ portalName(e.webName) }}</td>
-                        <td>
+                        <td data-label="Date">{{ (validDate(e.date) | date:'dd.MM.yyyy HH:mm') ?? '—' }}</td>
+                        <td data-label="Price">{{ e.price | number:'1.0-0' }} PLN</td>
+                        <td data-label="Price / m²">{{ e.pricePerMeter | number:'1.0-0' }} PLN</td>
+                        <td data-label="Portal">{{ portalName(e.webName) }}</td>
+                        <td data-label="Change">
                             @if (e.priceChange) {
                             <span class="delta" [class.down]="e.priceChange < 0" [class.up]="e.priceChange > 0">
                                 <span aria-hidden="true">{{ e.priceChange < 0 ? '▼' : '▲' }}</span>
@@ -168,7 +168,7 @@
                             <span class="delta flat">—</span>
                             }
                         </td>
-                        <td>
+                        <td data-label="Offer">
                             @if (e.url) {
                             <a class="offer-link" [href]="e.url" target="_blank" rel="noopener noreferrer">Open ↗</a>
                             } @else {

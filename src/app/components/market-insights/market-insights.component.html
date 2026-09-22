@@ -107,18 +107,18 @@
             <tbody>
                 @for (deal of data.bestDeals; track deal.url) {
                 <tr>
-                    <td class="deal-title">
+                    <td class="deal-title stack-full">
                         <a [href]="deal.url" target="_blank" rel="noopener noreferrer">{{ deal.title }}</a>
                     </td>
-                    <td>{{ deal.district }}</td>
-                    <td class="num">{{ deal.area | number:'1.0-1' }} m²</td>
-                    <td class="num">{{ deal.price | number:'1.0-0' }} PLN</td>
-                    <td class="num">{{ deal.pricePerMeter | number:'1.0-0' }} PLN</td>
-                    <td class="num">{{ deal.districtMedianPricePerMeter | number:'1.0-0' }} PLN</td>
-                    <td class="num">
+                    <td data-label="District">{{ deal.district }}</td>
+                    <td class="num" data-label="Area">{{ deal.area | number:'1.0-1' }} m²</td>
+                    <td class="num" data-label="Price">{{ deal.price | number:'1.0-0' }} PLN</td>
+                    <td class="num" data-label="Price / m²">{{ deal.pricePerMeter | number:'1.0-0' }} PLN</td>
+                    <td class="num" data-label="District median">{{ deal.districtMedianPricePerMeter | number:'1.0-0' }} PLN</td>
+                    <td class="num" data-label="Below median">
                         <span class="discount-badge">-{{ deal.belowMedianPercent | number:'1.0-1' }}%</span>
                     </td>
-                    <td>{{ deal.source }}</td>
+                    <td data-label="Source">{{ deal.source }}</td>
                 </tr>
                 }
             </tbody>

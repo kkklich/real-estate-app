@@ -1,4 +1,5 @@
 @use 'tokens' as *;
+@use 'stacked-table' as *;
 
 .property-list {
     padding: 22px 26px 40px 26px;
@@ -115,7 +116,10 @@
     }
 }
 
+// Positioned so the visually hidden "Actions" header label is clipped by this scroller;
+// otherwise it hangs off the table's far edge and makes the whole page scroll sideways.
 .table-wrapper {
+    position: relative;
     overflow-x: auto;
     border-radius: 12px;
     box-shadow: 0 4px 24px 0 rgba(80, 106, 139, 0.08);
@@ -210,9 +214,64 @@ mat-paginator {
     margin-top: 8px;
 }
 
+.mobile-sort {
+    display: none;
+}
+
 @media (max-width: $breakpoint-tablet) {
     .filters mat-form-field {
         width: 100%;
+    }
+
+    .mobile-sort {
+        display: flex;
+        align-items: stretch;
+        gap: 10px;
+        margin-bottom: 12px;
+
+        mat-form-field {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .sort-dir {
+            height: auto;
+            min-width: 96px;
+        }
+    }
+
+    // One card per offer; the wrapper's white panel and shadow would box the cards in.
+    .table-wrapper {
+        overflow: visible;
+        box-shadow: none;
+        background: transparent;
+    }
+
+    table.results {
+        @include stacked-table(2);
+
+        tbody tr {
+            box-shadow: 0 2px 12px 0 rgba(80, 106, 139, 0.08);
+        }
+
+        .title-cell {
+            font-size: 1rem;
+            line-height: 1.35;
+        }
+
+        .price-cell {
+            font-weight: 700;
+            color: $color-brand;
+        }
+
+        .actions-cell a {
+            width: 100%;
+            min-height: 44px;
+        }
+    }
+
+    mat-paginator {
+        margin-top: 0;
     }
 
     // Shorter than on desktop, so a swipe can still scroll the page past the map, but tall

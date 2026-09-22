@@ -1,0 +1,72 @@
+@use 'tokens' as *;
+
+// Turns a data table into one card per row on narrow screens: a wide table either
+// scrolled sideways or clipped its right-hand columns on a phone.
+//
+// Include it inside a max-width media query on the <table>. Every <td> needs a
+// data-label with its column name; it is printed above the value. A cell with class
+// `stack-full` spans the whole card (titles, actions) and gets no label.
+// The header stays in the DOM for screen readers, only visually hidden.
+@mixin stacked-table($columns: 2) {
+    // Anchors the hidden header, so it cannot reach past the page edge.
+    position: relative;
+
+    thead {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+    }
+
+    tbody {
+        display: block;
+    }
+
+    tbody tr {
+        display: grid;
+        grid-template-columns: repeat($columns, minmax(0, 1fr));
+        gap: 10px 14px;
+        padding: 14px 16px;
+        margin-bottom: 12px;
+        border: 1px solid $color-subtle;
+        border-radius: 12px;
+        background: #fff;
+
+        &:hover {
+            background: #fff;
+        }
+    }
+
+    tbody td {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 2px;
+        min-width: 0;
+        max-width: none;
+        padding: 0;
+        border: 0;
+        text-align: left;
+        white-space: normal;
+        overflow-wrap: anywhere;
+
+        &::before {
+            content: attr(data-label);
+            font-size: 0.72rem;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            color: $color-text-faint;
+        }
+    }
+
+    tbody td.stack-full {
+        grid-column: 1 / -1;
+
+        &::before {
+            content: none;
+        }
+    }
+}

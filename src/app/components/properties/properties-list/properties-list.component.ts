@@ -169,6 +169,12 @@ export class PropertiesListComponent {
         this.commitView();
     }
 
+    toggleSortDir(): void {
+        this.sortDir.set(this.sortDir() === 'asc' ? 'desc' : 'asc');
+        this.page.set(1);
+        this.commitView();
+    }
+
     onPage(event: PageEvent): void {
         this.page.set(event.pageIndex + 1);
         this.pageSize.set(event.pageSize);
