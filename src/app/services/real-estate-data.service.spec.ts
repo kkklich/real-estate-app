@@ -42,15 +42,15 @@ describe('RealEstateDataService', () => {
 
     it('caches each city separately', () => {
         let krakow: FullDashboard | undefined;
-        let katowice: FullDashboard | undefined;
+        let silesia: FullDashboard | undefined;
         service.getFullDashboard(cityEnum.Krakow).subscribe(value => krakow = value);
-        service.getFullDashboard(cityEnum.Katowice).subscribe(value => katowice = value);
+        service.getFullDashboard(cityEnum.Silesia).subscribe(value => silesia = value);
 
         http.expectOne(dashboardUrl(cityEnum.Krakow)).flush(payload('krakow'));
-        http.expectOne(dashboardUrl(cityEnum.Katowice)).flush(payload('katowice'));
+        http.expectOne(dashboardUrl(cityEnum.Silesia)).flush(payload('silesia'));
 
         expect(krakow).toEqual(payload('krakow'));
-        expect(katowice).toEqual(payload('katowice'));
+        expect(silesia).toEqual(payload('silesia'));
     });
 
     // The map offers are ~98% of what the dashboard used to send, and no page draws a map
@@ -78,8 +78,8 @@ describe('RealEstateDataService', () => {
 
     it('reads an empty map-points response as an empty list', () => {
         let mapPoints: unknown[] | undefined;
-        service.getMapPoints(cityEnum.Katowice).subscribe(value => mapPoints = value);
-        http.expectOne(mapPointsUrl(cityEnum.Katowice)).flush(null);
+        service.getMapPoints(cityEnum.Silesia).subscribe(value => mapPoints = value);
+        http.expectOne(mapPointsUrl(cityEnum.Silesia)).flush(null);
 
         expect(mapPoints).toEqual([]);
     });

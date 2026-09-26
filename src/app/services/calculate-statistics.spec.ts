@@ -81,7 +81,7 @@ describe('CalculateStatisticsService', () => {
         const service = create();
         fake.dashboards[0].response.next(dashboardFor('krakow'));
 
-        service.city.set(cityEnum.Katowice);
+        service.city.set(cityEnum.Silesia);
         TestBed.tick();
 
         expect(fake.mapPoints.length).toBe(0);
@@ -99,10 +99,10 @@ describe('CalculateStatisticsService', () => {
         fake.mapPoints[0].response.next(points);
         expect(service.mapPoints.data()).toEqual(points);
 
-        service.city.set(cityEnum.Katowice);
+        service.city.set(cityEnum.Silesia);
         TestBed.tick();
 
-        expect(fake.mapPoints.map(m => m.city)).toEqual([cityEnum.Krakow, cityEnum.Katowice]);
+        expect(fake.mapPoints.map(m => m.city)).toEqual([cityEnum.Krakow, cityEnum.Silesia]);
         expect(service.mapPoints.loading()).withContext('the previous city stays off the map').toBeTrue();
     });
 
@@ -156,21 +156,21 @@ describe('CalculateStatisticsService', () => {
         const service = create();
         const krakow = fake.dashboards[0];
 
-        service.city.set(cityEnum.Katowice);
+        service.city.set(cityEnum.Silesia);
         TestBed.tick();
 
         expect(krakow.response.observed).withContext('Krakow request should be unsubscribed').toBeFalse();
-        expect(fake.dashboards[1].city).toBe(cityEnum.Katowice);
+        expect(fake.dashboards[1].city).toBe(cityEnum.Silesia);
 
-        fake.dashboards[1].response.next(dashboardFor('katowice'));
-        expect(service.charts()).toEqual(dashboardFor('katowice').charts);
+        fake.dashboards[1].response.next(dashboardFor('silesia'));
+        expect(service.charts()).toEqual(dashboardFor('silesia').charts);
     });
 
     it('clears the previous city while the next one loads', () => {
         const service = create();
         fake.dashboards[0].response.next(dashboardFor('krakow'));
 
-        service.city.set(cityEnum.Katowice);
+        service.city.set(cityEnum.Silesia);
         TestBed.tick();
 
         expect(service.charts()).toBeNull();

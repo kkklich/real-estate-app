@@ -51,8 +51,11 @@ from a subpath, not the domain root. Override per build with `--base-href`.
 | `/properties` | every distinct offer: filter, sort, page; **Show on map** plots the current offers that match the applied filters |
 | `/properties/history` | price history of one offer across scrapes |
 
-The toolbar switches city (Kraków / Katowice). That is the main input the whole
-dashboard reacts to.
+The toolbar switches city (Silesia / Kraków). That is the main input the whole
+dashboard reacts to. Silesia is not one city but the API's area of Katowice,
+Chorzów, Tychy, Mikołów, Mysłowice and Sosnowiec, shown as one market: its
+districts read "Tychy – Osiedle Z", and on `/properties` each offer keeps its own
+city.
 
 ## How the state works
 
@@ -84,7 +87,7 @@ opens first pays for the download.
 `/properties` is independent: it owns its filter, sort and paging signals and
 calls [`PropertyListService`](src/app/services/property-list.service.ts)
 directly. Its map is the dashboard's `map-view`, fed with the map points of the
-applied city (both cities for "All"). The points are filtered in the browser by
+applied city (Silesia and Kraków for "All"). The points are filtered in the browser by
 [`filterMapPoints`](src/app/components/properties/properties-list/map-point-filter.ts),
 which mirrors the API's list filters. They come from the latest scrape only, so offers that are
 no longer listed appear in the table but not on the map.

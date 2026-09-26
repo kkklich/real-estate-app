@@ -23,7 +23,7 @@ export class SearchFilterComponent {
 
     // The enum values are what the API expects; the labels are what people read.
     readonly cities: readonly { value: cityEnum; label: string }[] = [
-        { value: cityEnum.Katowice, label: 'Katowice' },
+        { value: cityEnum.Silesia, label: 'Silesia' },
         { value: cityEnum.Krakow, label: 'Kraków' }
     ];
 }
