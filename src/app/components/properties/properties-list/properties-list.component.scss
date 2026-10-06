@@ -55,15 +55,13 @@
     overflow: hidden;
 }
 
-// A grid, so the fields line up in fixed tracks at every width instead of wrapping one
-// at a time: one row on desktop, three on tablet (selects + search / numbers / button),
-// two columns on phones. subscriptSizing="dynamic" drops the empty hint space under each
-// field, so the button can stretch to their exact height.
+// The per-column filters live in the table's own header now; what is left here is the
+// search that spans two columns at once, and the buttons that commit or empty the whole
+// set. subscriptSizing="dynamic" drops the empty hint space under the field, so the
+// buttons can stretch to its exact height.
 .filters {
     display: grid;
-    grid-template-columns:
-        minmax(0, 1.2fr) minmax(0, 1.2fr) minmax(0, 2fr)
-        repeat(4, minmax(0, 1fr)) auto;
+    grid-template-columns: minmax(0, 1fr) auto auto;
     align-items: center;
     gap: 12px;
     margin-bottom: 20px;
@@ -73,31 +71,19 @@
         min-width: 0;
     }
 
-    .apply-btn {
+    .apply-btn,
+    .clear-btn {
         align-self: stretch;
         height: auto;
         min-height: 48px;
         padding: 0 28px;
     }
 
-    @media (max-width: $breakpoint-desktop) {
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-
-        .search {
-            grid-column: span 2;
-        }
-
-        .apply-btn {
-            grid-column: 1 / -1;
-            justify-self: end;
-        }
-    }
-
     @media (max-width: $breakpoint-tablet) {
         grid-template-columns: repeat(2, minmax(0, 1fr));
 
-        .apply-btn {
-            justify-self: stretch;
+        .search {
+            grid-column: 1 / -1;
         }
     }
 }
@@ -176,8 +162,47 @@ table.results {
         margin-left: 4px;
     }
 
+    // The second header row: one filter control per column, under its own heading.
+    .filter-row td {
+        padding: 0 8px 10px 8px;
+        background: $color-surface-header;
+        vertical-align: top;
+    }
+
+    .filter-actions {
+        text-align: right;
+    }
+
+    .filter-apply {
+        min-height: 32px;
+        padding: 0 14px;
+        line-height: 32px;
+    }
+
     tbody tr:hover {
         background: $color-surface-hover;
+    }
+
+    // Loading, failed and empty all render as one row under the header, so the sort
+    // buttons and the column filters stay put while the rows underneath them change.
+    // The flex box is a wrapper, not the cell: a <td> that is not a table-cell any
+    // more stops honouring its own colspan.
+    .state-cell {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        min-height: 180px;
+        color: $color-text-muted;
+    }
+
+    .state-cell.error {
+        color: $color-danger;
+    }
+
+    .state-row:hover {
+        background: none;
     }
 
     .title-cell {
@@ -187,8 +212,53 @@ table.results {
         font-weight: 500;
     }
 
-    .center {
-        text-align: center;
+    // Numbers read as a column when their last digits line up.
+    th.numeric .sort-btn,
+    tbody td.numeric {
+        text-align: right;
+    }
+}
+
+// Deliberately not a mat-form-field: a header row needs a control a third of the height
+// Material gives one, and there are up to two per column.
+.col-filter {
+    width: 100%;
+    min-width: 0;
+    padding: 5px 7px;
+    font: inherit;
+    font-size: 0.82rem;
+    color: $color-text;
+    background: #fff;
+    border: 1px solid $color-subtle;
+    border-radius: 6px;
+
+    &::placeholder {
+        color: $color-text-faint;
+    }
+
+    &:focus-visible {
+        outline: 2px solid $color-brand;
+        outline-offset: -1px;
+    }
+}
+
+// The two bounds of a range share their column, so the header stays one row tall. They
+// are kept narrow on purpose: six range columns two boxes wide is what decides whether
+// the table fits a 1600px screen, and the Actions column - the History links, and the
+// Apply button next to them - is what falls off the right when it does not.
+.col-filter-range {
+    display: flex;
+    gap: 4px;
+
+    .col-filter {
+        // An explicit width, not a minimum: an <input> is 20 characters wide by default,
+        // and that intrinsic width - not the values under it - is what sized these six
+        // columns at 178px each and pushed the table past a 1600px screen.
+        width: 52px;
+        flex: 1 1 52px;
+        min-width: 0;
+        text-align: right;
+        padding: 5px 4px;
     }
 }
 
@@ -214,13 +284,17 @@ mat-paginator {
     margin-top: 8px;
 }
 
-.mobile-sort {
+.mobile-controls {
     display: none;
 }
 
 @media (max-width: $breakpoint-tablet) {
     .filters mat-form-field {
         width: 100%;
+    }
+
+    .mobile-controls {
+        display: block;
     }
 
     .mobile-sort {
@@ -240,6 +314,44 @@ mat-paginator {
         }
     }
 
+    // The card view hides the whole <thead>, and with it the column filters; this brings
+    // the same controls back, collapsed so they do not push the offers off the screen.
+    .mobile-filters {
+        margin-bottom: 14px;
+        border: 1px solid $color-subtle;
+        border-radius: 12px;
+        background: #fff;
+
+        summary {
+            padding: 12px 16px;
+            font-weight: 600;
+            color: $color-text;
+            cursor: pointer;
+        }
+    }
+
+    .mobile-filters__grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+        padding: 0 16px 16px 16px;
+    }
+
+    .mobile-filters__label {
+        display: block;
+        margin-bottom: 4px;
+        font-size: 0.72rem;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: $color-text-faint;
+    }
+
+    .mobile-filters__apply {
+        grid-column: 1 / -1;
+        min-height: 44px;
+    }
+
     // One card per offer; the wrapper's white panel and shadow would box the cards in.
     .table-wrapper {
         overflow: visible;
@@ -249,6 +361,12 @@ mat-paginator {
 
     table.results {
         @include stacked-table(2);
+
+        // A card labels each value above it, so the right-aligned columns of the table
+        // would hang away from their own labels.
+        tbody td.numeric {
+            text-align: left;
+        }
 
         tbody tr {
             box-shadow: 0 2px 12px 0 rgba(80, 106, 139, 0.08);

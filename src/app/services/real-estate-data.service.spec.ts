@@ -53,7 +53,7 @@ describe('RealEstateDataService', () => {
         expect(katowice).toEqual(payload('katowice'));
     });
 
-    // The map offers are ~98% of what the dashboard used to send, and no page draws a map
+    // The map offers are over 99% of what the dashboard used to send, and no page draws a map
     // before the visitor opens one - so loading the dashboard must not fetch them.
     it('does not request the map offers along with the dashboard', () => {
         service.getFullDashboard(cityEnum.Krakow).subscribe();

@@ -17,6 +17,7 @@ import { httpErrorMessage } from '../../../services/http-error-message';
 import { PropertyHistory } from '../../../models/propertyHistory';
 import { portalName } from '../../../models/enums/web-name.enum';
 import { provideAppCharts } from '../../charts/chart-setup';
+import { normalizeOfferUrl } from './offer-url';
 
 @Component({
     selector: 'app-property-history',
@@ -61,6 +62,32 @@ export class PropertyHistoryComponent {
         return value && Number.isFinite(Date.parse(value)) ? value : null;
     }
 
+    /**
+     * Passes a price through only if the portal stated one, so the template can fall back
+     * to a dash. An offer without a price is stored as 0, and "0 PLN" read as a flat given
+     * away rather than one whose price nobody knows.
+     */
+    protected statedPrice(value: number | null | undefined): number | null {
+        return value != null && value > 0 ? value : null;
+    }
+
+    /**
+     * How many links besides the offer's own the history takes in: the flat re-posted
+     * under a new link, or listed on another portal (PropertyComparer in the API). The
+     * list's Change compares snapshots of one link only, so with any of these the two
+     * totals can differ - both correctly - and the page says so.
+     */
+    protected readonly otherLinks = computed(() => {
+        const history = this.history.data();
+        if (!history) return 0;
+
+        const own = normalizeOfferUrl(history.url);
+        const others = new Set(history.entries
+            .map(entry => normalizeOfferUrl(entry.url))
+            .filter(url => url !== '' && url !== own));
+        return others.size;
+    });
+
     constructor() {
         // queryParams never completes; without takeUntilDestroyed this subscription
         // outlived every visit to the page.
@@ -98,7 +125,9 @@ export class PropertyHistoryComponent {
      * between scrapes - so the x axis carries timestamps rather than category
      * labels. A category axis draws every gap the same width, which flattens a
      * month of silence into a single step. Unparseable dates are dropped here
-     * instead of throwing out of the whole chart.
+     * instead of throwing out of the whole chart, and so are snapshots that did not
+     * state a price: plotted as 0 they drew a crash to nothing and back, and pulled the
+     * axis down so far that every real move flattened out.
      */
     protected readonly points = computed(() =>
         (this.history.data()?.entries ?? [])
@@ -107,7 +136,7 @@ export class PropertyHistoryComponent {
                 price: entry.price,
                 pricePerMeter: entry.pricePerMeter
             }))
-            .filter(point => Number.isFinite(point.at))
+            .filter(point => Number.isFinite(point.at) && this.statedPrice(point.price) !== null)
             .sort((a, b) => a.at - b.at)
     );
 

@@ -1,8 +1,10 @@
 import { DeferBlockBehavior, TestBed } from '@angular/core/testing';
 import { PLATFORM_ID, provideZonelessChangeDetection } from '@angular/core';
+import { Location } from '@angular/common';
+import { SpyLocation, provideLocationMocks } from '@angular/common/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, TestRequest, provideHttpClientTesting } from '@angular/common/http/testing';
-import { provideRouter } from '@angular/router';
+import { Router, provideRouter } from '@angular/router';
 import { provideAppIcons } from '../../../app-icons';
 import { PropertiesListComponent } from './properties-list.component';
 import { PagedResult } from '../../../models/pagedResult';
@@ -13,7 +15,7 @@ describe('PropertiesListComponent', () => {
 
     let http: HttpTestingController;
 
-    function render(platform: 'browser' | 'server' = 'browser') {
+    function configure(platform: 'browser' | 'server') {
         TestBed.configureTestingModule({
             imports: [PropertiesListComponent],
             providers: [
@@ -21,6 +23,9 @@ describe('PropertiesListComponent', () => {
                 provideHttpClient(),
                 provideHttpClientTesting(),
                 provideRouter([]),
+                // The page writes its query to the URL; a real Location would rewrite the
+                // address of the page Karma runs the specs in.
+                provideLocationMocks(),
                 provideAppIcons(),
                 { provide: PLATFORM_ID, useValue: platform }
             ],
@@ -29,11 +34,32 @@ describe('PropertiesListComponent', () => {
             deferBlockBehavior: DeferBlockBehavior.Manual
         });
         http = TestBed.inject(HttpTestingController);
+    }
+
+    function create() {
         const fixture = TestBed.createComponent(PropertiesListComponent);
         fixture.detectChanges();
         TestBed.tick();
         return { fixture, component: fixture.componentInstance };
     }
+
+    function render(platform: 'browser' | 'server' = 'browser') {
+        configure(platform);
+        return create();
+    }
+
+    /** Opens the page at a URL, as a reload or a shared link does. */
+    async function renderAt(url: string) {
+        configure('browser');
+        await TestBed.inject(Router).navigateByUrl(url);
+        return create();
+    }
+
+    const location = () => TestBed.inject(Location) as SpyLocation;
+
+    /** The query string in the address bar, as name/value pairs. */
+    const urlParams = (): Record<string, string> =>
+        Object.fromEntries(new URLSearchParams(location().path().split('?')[1] ?? ''));
 
     const pending = (): TestRequest[] => http.match(r => r.url.endsWith('/api/RealEstate/properties'));
     const only = (): TestRequest => {
@@ -56,7 +82,7 @@ describe('PropertiesListComponent', () => {
 
     const offer = (title: string, overrides: Partial<MapPoint> = {}): MapPoint => ({
         url: `https://example.com/${title}`, title, price: 500_000, pricePerMeter: 10_000, floor: 1,
-        market: 'Wtórny', buildingType: 'blok', area: 50, private: false, color: '',
+        market: 'Wtórny', buildingType: 'blok', area: 50, private: false,
         location: { lat: 50.06, lon: 19.94, district: 'Stare Miasto' },
         ...overrides
     });
@@ -129,19 +155,373 @@ describe('PropertiesListComponent', () => {
         paged.flush(page('c'));
     });
 
-    it('shows a failure as an error, and retry re-sends the same query', () => {
-        const { component } = render();
+    describe('column filters', () => {
 
+        it('sends every column filter, and keeps them through a sort', () => {
+            const { component } = render();
+            only().flush(page('initial'));
+
+            component.title.set('kawalerka');
+            component.district.set('Podgorze');
+            component.market.set('primary');
+            component.pricePerMeterMin.set('12000');
+            component.floorMin.set('1');
+            component.floorMax.set('3');
+            // Everything the price has dropped by at least 10k: an upper bound below zero.
+            component.priceChangeMax.set('-10000');
+            component.snapshotCountMin.set('2');
+            component.applyFilters();
+            TestBed.tick();
+
+            const applied = only();
+            const sent = (key: string) => applied.request.params.get(key);
+            expect(sent('title')).toBe('kawalerka');
+            expect(sent('district')).toBe('Podgorze');
+            expect(sent('market')).toBe('primary');
+            expect(sent('pricePerMeterMin')).toBe('12000');
+            expect(sent('floorMin')).toBe('1');
+            expect(sent('floorMax')).toBe('3');
+            expect(sent('priceChangeMax')).toBe('-10000');
+            expect(sent('snapshotCountMin')).toBe('2');
+            applied.flush(page('filtered'));
+
+            component.sortByColumn('priceChange');
+            TestBed.tick();
+            const sorted = only();
+            expect(sorted.request.params.get('sortBy')).toBe('priceChange');
+            expect(sorted.request.params.get('priceChangeMax')).withContext('filter lost on sort').toBe('-10000');
+            sorted.flush(page('sorted'));
+        });
+
+        // A box holding only "-" or "1e" is on its way to a number, not a bound yet.
+        it('leaves out a bound that is empty or not a number', () => {
+            const { component } = render();
+            only().flush(page('initial'));
+
+            component.priceMin.set('  ');
+            component.priceChangeMax.set('-');
+            component.areaMin.set('40');
+            component.applyFilters();
+            TestBed.tick();
+
+            const applied = only();
+            expect(applied.request.params.has('priceMin')).toBeFalse();
+            expect(applied.request.params.has('priceChangeMax')).toBeFalse();
+            expect(applied.request.params.get('areaMin')).toBe('40');
+            applied.flush(page('filtered'));
+        });
+
+        it('empties every filter at once, and applies that', () => {
+            const { component } = render();
+            only().flush(page('initial'));
+            expect(component.hasFilters()).toBeFalse();
+
+            component.search.set('osiedle');
+            component.city.set('Krakow');
+            component.priceMax.set('500000');
+            component.applyFilters();
+            TestBed.tick();
+            expect(component.hasFilters()).toBeTrue();
+            only().flush(page('filtered'));
+
+            component.clearFilters();
+            TestBed.tick();
+
+            const cleared = only();
+            for (const key of ['search', 'city', 'priceMax']) {
+                expect(cleared.request.params.has(key)).withContext(`${key} survived Clear`).toBeFalse();
+            }
+            expect(component.hasFilters()).toBeFalse();
+            expect(component.search()).toBe('');
+            expect(component.priceMax()).toBe('');
+            cleared.flush(page('all'));
+        });
+
+        // The filters live in the table's own header. Replacing the table with a spinner
+        // while the request ran took them - and the focus in one of them - with it.
+        it('keeps the header and its filters mounted while the request is in flight', () => {
+            const { fixture, component } = render();
+            only().flush(page('x'));
+            fixture.detectChanges();
+            const el = fixture.nativeElement as HTMLElement;
+            const header = el.querySelector('thead');
+
+            component.title.set('loft');
+            component.applyFilters();
+            fixture.detectChanges();
+
+            expect(component.properties.loading()).toBeTrue();
+            expect(el.querySelector('thead')).withContext('header torn down').toBe(header);
+            expect(el.querySelector<HTMLInputElement>('.filter-row [aria-label="Filter by Title"]')?.value).toBe('loft');
+            expect(el.querySelector('.state-row .state-cell')).withContext('spinner row').not.toBeNull();
+            expect(el.querySelectorAll('tbody tr:not(.state-row)').length).toBe(0);
+
+            only().flush(page('loft'));
+            fixture.detectChanges();
+            expect(el.querySelector('.state-row')).toBeNull();
+            expect(el.querySelectorAll('tbody tr').length).toBe(1);
+        });
+
+        it('renders a control per column in the header, and applies what is typed into one', () => {
+            const { fixture, component } = render();
+            only().flush(page('x'));
+            fixture.detectChanges();
+            const el = fixture.nativeElement as HTMLElement;
+
+            // Every column carries a sort button and, unless it has no filter, at least one
+            // filter box; the trailing actions column carries the Apply button instead.
+            expect(el.querySelectorAll('thead .sort-btn').length).toBe(component.columns.length);
+            expect(el.querySelectorAll('.filter-row td').length).toBe(component.columns.length + 1);
+            const filtered = component.columns.filter(col => col.filter !== 'none').length;
+            const ranges = component.columns.filter(col => col.filter === 'range').length;
+            expect(el.querySelectorAll('.filter-row .col-filter').length).toBe(filtered + ranges);
+            // The phone panel lists only the columns it has a control for.
+            expect(el.querySelectorAll('.mobile-filters__field').length).toBe(filtered);
+
+            const titleBox = el.querySelector<HTMLInputElement>('.filter-row .col-filter')!;
+            expect(titleBox.getAttribute('aria-label')).toBe('Filter by Title');
+            titleBox.value = 'loft';
+            titleBox.dispatchEvent(new Event('input'));
+            fixture.detectChanges();
+            expect(component.title()).toBe('loft');
+            expect(pending().length).withContext('requested before Apply').toBe(0);
+
+            el.querySelector<HTMLButtonElement>('.filter-row .filter-apply')!.click();
+            fixture.detectChanges();
+            const applied = only();
+            expect(applied.request.params.get('title')).toBe('loft');
+            applied.flush(page('loft'));
+        });
+    });
+
+    // Reloading the page or sharing its link used to drop every filter, the sort and the page.
+    //
+    // whenStable() waits for the URL write, a navigation. It waits for open HTTP requests
+    // as well, so each spec answers the list's request before it waits.
+    describe('address bar', () => {
+
+        it('restores the applied filters, sort and page from the query string', async () => {
+            const { fixture, component } = await renderAt('/?title=kawalerka&city=Krakow&market=primary'
+                + '&priceMin=300000&priceChangeMax=-10000&snapshotCountMin=2&search=osiedle'
+                + '&sortBy=priceChange&sortDir=asc&page=3&pageSize=25');
+
+            // The very first request already asks for it: there is no unfiltered one before.
+            const restored = only();
+            const sent = (key: string) => restored.request.params.get(key);
+            expect(sent('title')).toBe('kawalerka');
+            expect(sent('city')).toBe('Krakow');
+            expect(sent('market')).toBe('primary');
+            expect(sent('priceMin')).toBe('300000');
+            expect(sent('priceChangeMax')).toBe('-10000');
+            expect(sent('snapshotCountMin')).toBe('2');
+            expect(sent('search')).toBe('osiedle');
+            expect(sent('sortBy')).toBe('priceChange');
+            expect(sent('sortDir')).toBe('asc');
+            expect(sent('page')).toBe('3');
+            expect(sent('pageSize')).toBe('25');
+            restored.flush(page('restored'));
+            fixture.detectChanges();
+
+            // The boxes show what is applied, so the next Apply keeps it instead of quietly
+            // dropping it; so do the paginator and the sort header.
+            const el = fixture.nativeElement as HTMLElement;
+            const box = (label: string) =>
+                el.querySelector<HTMLInputElement | HTMLSelectElement>(`.filter-row [aria-label="${label}"]`)?.value;
+            expect(box('Filter by Title')).toBe('kawalerka');
+            expect(box('Filter by City')).toBe('Krakow');
+            expect(box('Filter by Market')).toBe('primary');
+            expect(box('Price from')).toBe('300000');
+            expect(box('Change to')).toBe('-10000');
+            expect(component.search()).toBe('osiedle');
+            expect(component.pageIndex()).toBe(2);
+            expect(component.pageSize()).toBe(25);
+            expect(component.ariaSort('priceChange')).toBe('ascending');
+
+            await fixture.whenStable();
+            expect(pending().length).withContext('requests after the page settled').toBe(0);
+            expect(urlParams()).withContext('the URL still names the same query').toEqual({
+                title: 'kawalerka', city: 'Krakow', market: 'primary', priceMin: '300000',
+                priceChangeMax: '-10000', snapshotCountMin: '2', search: 'osiedle',
+                sortBy: 'priceChange', sortDir: 'asc', page: '3', pageSize: '25'
+            });
+        });
+
+        it('drops query-string values the page could not have written, and tidies the URL', async () => {
+            const { fixture, component } = await renderAt('/?sortBy=bogus&sortDir=up&page=0&pageSize=7'
+                + '&priceMin=abc&areaMax=80&city=Warszawa&market=luxury&utm_source=newsletter');
+
+            const request = only();
+            const params = request.request.params;
+            expect(params.get('sortBy')).toBe('lastSeen');
+            expect(params.get('sortDir')).toBe('desc');
+            expect(params.get('page')).toBe('1');
+            expect(params.get('pageSize')).toBe('10');
+            for (const key of ['priceMin', 'city', 'market', 'utm_source']) {
+                expect(params.has(key)).withContext(`${key} sent`).toBeFalse();
+            }
+            // A valid value among them still counts.
+            expect(params.get('areaMax')).toBe('80');
+            request.flush(page('defaults'));
+
+            expect(component.priceMin()).toBe('');
+            expect(component.city()).toBe('');
+            expect(component.market()).toBe('');
+            expect(component.areaMax()).toBe('80');
+
+            await fixture.whenStable();
+            expect(urlParams()).toEqual({ areaMax: '80' });
+            expect(pending().length).withContext('tidying the URL re-requested').toBe(0);
+        });
+
+        it('ignores a page that is not a whole number from 1 up', async () => {
+            for (const bad of ['-2', '2.5', 'last']) {
+                TestBed.resetTestingModule();
+                const { fixture } = await renderAt(`/?page=${bad}`);
+                const request = only();
+                expect(request.request.params.get('page')).withContext(`page=${bad}`).toBe('1');
+                request.flush(page('first'));
+                await fixture.whenStable();
+                http.verify();
+            }
+        });
+
+        it('writes the applied query, sort and page to the URL, and leaves half-typed filters out', async () => {
+            const { fixture, component } = render();
+            only().flush(page('initial'));
+            await fixture.whenStable();
+            expect(urlParams()).withContext('the untouched page').toEqual({});
+
+            component.city.set('Krakow');
+            component.priceChangeMax.set('-10000');
+            component.applyFilters();
+            TestBed.tick();
+            only().flush(page('applied'));
+            await fixture.whenStable();
+            expect(urlParams()).toEqual({ city: 'Krakow', priceChangeMax: '-10000' });
+
+            // Typed but not applied: it stays out of the URL as it stays out of the request,
+            // and the page's own write coming back does not wipe it from its box either.
+            component.title.set('loft');
+            component.sortByColumn('price');
+            TestBed.tick();
+            only().flush(page('sorted'));
+            await fixture.whenStable();
+            expect(urlParams()).toEqual({ city: 'Krakow', priceChangeMax: '-10000', sortBy: 'price', sortDir: 'asc' });
+            expect(component.title()).toBe('loft');
+
+            component.onPage({ pageIndex: 2, pageSize: 25, length: 100 });
+            TestBed.tick();
+            only().flush(page('paged'));
+            await fixture.whenStable();
+            expect(urlParams()).toEqual({
+                city: 'Krakow', priceChangeMax: '-10000', sortBy: 'price', sortDir: 'asc', page: '3', pageSize: '25'
+            });
+            expect(pending().length).withContext('requests caused by the URL writes').toBe(0);
+
+            // Every write replaced the entry: Back leaves the list instead of stepping through
+            // each sort and page turn.
+            const changes = location().urlChanges;
+            expect(changes.length).toBeGreaterThan(0);
+            expect(changes.filter(change => !change.startsWith('replace: ')))
+                .withContext('history entries pushed').toEqual([]);
+        });
+
+        // The toolbar's Properties link, clicked from a filtered list, keeps this component
+        // and changes only the query string. The table used to stay filtered under a bare URL.
+        it('follows a link that changes only the query string', async () => {
+            const { fixture, component } = await renderAt('/?city=Krakow&sortBy=price&sortDir=asc&page=2');
+            only().flush(page('filtered'));
+            await fixture.whenStable();
+            component.title.set('loft');
+
+            await TestBed.inject(Router).navigateByUrl('/');
+            TestBed.tick();
+
+            const reset = only();
+            expect(reset.request.params.has('city')).toBeFalse();
+            expect(reset.request.params.get('sortBy')).toBe('lastSeen');
+            expect(reset.request.params.get('page')).toBe('1');
+            expect(component.city()).toBe('');
+            expect(component.title()).withContext('the boxes follow the link too').toBe('');
+            reset.flush(page('all'));
+
+            await fixture.whenStable();
+            expect(urlParams()).toEqual({});
+            expect(pending().length).toBe(0);
+        });
+    });
+
+    it('shows a failure as an error, and retry re-sends the same query', () => {
+        const { fixture, component } = render();
+        const el = fixture.nativeElement as HTMLElement;
+        only().flush(page('initial'));
+
+        component.title.set('loft');
+        component.applyFilters();
+        TestBed.tick();
         only().flush('down', { status: 503, statusText: 'Unavailable' });
         expect(component.properties.error()).toBe('The server failed while loading properties. Try again in a moment.');
 
-        component.retry();
+        // The error takes the rows' place, not the header's: a failure is the moment the
+        // filter that caused it most needs to be reachable.
+        fixture.detectChanges();
+        expect(el.querySelector('.state-cell.error')?.textContent).toContain('The server failed');
+        expect(el.querySelector<HTMLInputElement>('.filter-row [aria-label="Filter by Title"]')?.value).toBe('loft');
+        expect(el.querySelector('mat-paginator')).withContext('paginator without a result').toBeNull();
+
+        el.querySelector<HTMLButtonElement>('.state-cell.error button')!.click();
         TestBed.tick();
 
         const retried = only();
         expect(retried.request.params.get('sortBy')).toBe('lastSeen');
+        expect(retried.request.params.get('title')).toBe('loft');
         retried.flush(page('retried'));
+        fixture.detectChanges();
         expect(component.properties.error()).toBeNull();
+        expect(el.querySelector('.state-cell.error')).toBeNull();
+    });
+
+    // A 0 price is one the portal did not state; the API reports the change against it as
+    // unknown (null) rather than as a rise or drop by the whole price.
+    it('shows an unknown price change as a dash, like an unchanged one', () => {
+        const { fixture } = render();
+        const row = (id: string, priceChange: number | null) =>
+            ({ id, title: id, url: `https://example.com/${id}`, priceChange } as PropertyListItem);
+        only().flush({
+            items: [row('dropped', -20_000), row('unknown', null), row('unchanged', 0)],
+            totalCount: 3, page: 1, pageSize: 10, totalPages: 1
+        });
+        fixture.detectChanges();
+
+        const cells = [...(fixture.nativeElement as HTMLElement).querySelectorAll('td[data-label="Change"]')];
+        const texts = cells.map(cell => cell.textContent!.replace(/\s+/g, ' ').trim());
+        // Any grouping separator: the test runs in whichever locale TestBed defaults to.
+        expect(texts[0]).toMatch(/^▼ -20.000 PLN$/);
+        expect(texts.slice(1)).toEqual(['—', '—']);
+        expect(cells[0].querySelector('.delta.down')).not.toBeNull();
+    });
+
+    // When a scrape last found the offer listed: an old date is an offer that is gone.
+    it('shows the date of each offer\'s newest snapshot, and marks the default sort on its header', () => {
+        const { fixture } = render();
+        const row = (id: string, lastSeen: string) =>
+            ({ id, title: id, url: `https://example.com/${id}`, lastSeen } as PropertyListItem);
+        only().flush({
+            // The API sends the time without a zone, to the microsecond.
+            items: [row('listed', '2026-09-21T21:01:08.298453'), row('broken', 'not a date')],
+            totalCount: 2, page: 1, pageSize: 10, totalPages: 1
+        });
+        fixture.detectChanges();
+        const el = fixture.nativeElement as HTMLElement;
+
+        const cells = [...el.querySelectorAll('td[data-label="Last seen"]')].map(cell => cell.textContent!.trim());
+        // A value DatePipe cannot read shows a dash, and does not break the table.
+        expect(cells).toEqual(['21.09.2026', '—']);
+
+        // The list opens sorted by it, newest first, and its header shows that.
+        const header = [...el.querySelectorAll('thead th')].find(th => th.textContent!.includes('Last seen'));
+        expect(header?.getAttribute('aria-sort')).toBe('descending');
+        expect(header?.querySelector('.sort-arrow')?.textContent).toBe('▼');
     });
 
     it('announces the current sort to screen readers', () => {
@@ -160,12 +540,38 @@ describe('PropertiesListComponent', () => {
         only().flush(page('z'));
     });
 
+    // Scraped Polish on an English page: without lang, a screen reader spells it out in English.
+    it('marks scraped titles, districts and market names as Polish, but not their English labels', () => {
+        const { fixture } = render();
+        const row = (id: string, district: string) => ({
+            id, title: `Mieszkanie ${id}`, url: `https://example.com/${id}`, city: 'Krakow',
+            district, market: 'Wtórny', priceChange: 0
+        } as PropertyListItem);
+        only().flush({
+            items: [row('a', 'Podgórze'), row('b', '')],
+            totalCount: 2, page: 1, pageSize: 10, totalPages: 1
+        });
+        fixture.detectChanges();
+
+        const [withDistrict, withoutDistrict] = [...(fixture.nativeElement as HTMLElement).querySelectorAll('tbody tr')];
+        const polish = (tr: Element) => [...tr.querySelectorAll('[lang="pl"]')].map(node => node.textContent!.trim());
+        expect(polish(withDistrict)).toEqual(['Mieszkanie a', 'Podgórze', 'Wtórny']);
+        // The dash that stands in for no district is not Polish text.
+        expect(polish(withoutDistrict)).toEqual(['Mieszkanie b', 'Wtórny']);
+
+        // Card view prints each cell's data-label inside the cell, so lang stays off the
+        // cell itself wherever there is one - the English "District" is not Polish.
+        const labelled = withDistrict.querySelectorAll('td[data-label][lang]');
+        expect(labelled.length).withContext('labelled cells marked as Polish').toBe(0);
+    });
+
     // Review finding 3: prerendering baked "Failed to load properties." into the static HTML.
     it('does not call the API while rendering on the server', () => {
         const { component } = render('server');
 
         expect(pending().length).toBe(0);
         expect(component.properties.loading()).toBeTrue();
+        expect(location().urlChanges).withContext('URL written on the server').toEqual([]);
 
         component.toggleMap();
         TestBed.tick();
@@ -304,10 +710,11 @@ describe('PropertiesListComponent', () => {
             )));
             fixture.detectChanges();
             expect(summary()).toBe('4 offers from the latest scrape match the applied filters. '
-                + 'Older listings and offers without a location are not on the map.');
+                + 'Older listings and offers without a location are not on the map. '
+                + 'The change and snapshot filters narrow the table only.');
             expect((await fixture.getDeferBlocks()).length).withContext('map blocks with offers').toBe(1);
 
-            fixture.componentInstance.priceMax.set(1);
+            fixture.componentInstance.priceMax.set('1');
             fixture.componentInstance.applyFilters();
             fixture.detectChanges();
             only().flush(page('none'));

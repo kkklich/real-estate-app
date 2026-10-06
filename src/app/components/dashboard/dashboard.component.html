@@ -45,8 +45,9 @@
         <app-split-donut-chart class="building-split" chartTitle="Building types"
             [slices]="data.buildingTypeSplit"></app-split-donut-chart>
 
-        <!-- maplibre-gl + WebGL are heavy, and so are the offers themselves (~230 kB, the
-             rest of this page is ~4 kB) - both are only fetched once the user asks. -->
+        <!-- maplibre-gl + WebGL are heavy, and so are the offers themselves (about half a
+             megabyte compressed for Krakow, the rest of this page is a few kB) - both are
+             only fetched once the user asks. -->
         @defer (on interaction(openMapBtn)) {
         @if (stats.mapPoints.error(); as mapError) {
         <div class="map-error" role="alert">

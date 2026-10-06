@@ -8,53 +8,21 @@
         </button>
     </div>
 
+    <!--
+      One filter control per column lives in the table's own header row (and, where the
+      table becomes cards, in the panel below). What is left here is the search that spans
+      two columns at once, and the buttons that commit or empty the whole set.
+    -->
     <div class="filters">
-        <mat-form-field appearance="outline" subscriptSizing="dynamic">
-            <mat-label>City</mat-label>
-            <mat-select panelClass="select-panel" [ngModel]="city()" (ngModelChange)="city.set($event)">
-                <mat-option value="">All</mat-option>
-                @for (c of cityList; track c) {
-                <mat-option [value]="c">{{ c }}</mat-option>
-                }
-            </mat-select>
-        </mat-form-field>
-
-        <mat-form-field appearance="outline" subscriptSizing="dynamic">
-            <mat-label>Market</mat-label>
-            <mat-select panelClass="select-panel" [ngModel]="market()" (ngModelChange)="market.set($event)">
-                <mat-option value="">All</mat-option>
-                <mat-option value="primary">Primary</mat-option>
-                <mat-option value="secondary">Secondary</mat-option>
-            </mat-select>
-        </mat-form-field>
-
         <mat-form-field appearance="outline" subscriptSizing="dynamic" class="search">
             <mat-label>Search</mat-label>
             <input matInput type="text" [ngModel]="search()" (ngModelChange)="search.set($event)"
-                placeholder="Title, district…">
-        </mat-form-field>
-
-        <mat-form-field appearance="outline" subscriptSizing="dynamic" class="num">
-            <mat-label>Price min</mat-label>
-            <input matInput type="number" [ngModel]="priceMin()" (ngModelChange)="priceMin.set($event)">
-        </mat-form-field>
-
-        <mat-form-field appearance="outline" subscriptSizing="dynamic" class="num">
-            <mat-label>Price max</mat-label>
-            <input matInput type="number" [ngModel]="priceMax()" (ngModelChange)="priceMax.set($event)">
-        </mat-form-field>
-
-        <mat-form-field appearance="outline" subscriptSizing="dynamic" class="num">
-            <mat-label>Area min</mat-label>
-            <input matInput type="number" [ngModel]="areaMin()" (ngModelChange)="areaMin.set($event)">
-        </mat-form-field>
-
-        <mat-form-field appearance="outline" subscriptSizing="dynamic" class="num">
-            <mat-label>Area max</mat-label>
-            <input matInput type="number" [ngModel]="areaMax()" (ngModelChange)="areaMax.set($event)">
+                (keydown.enter)="applyFilters()" placeholder="Title or district…">
         </mat-form-field>
 
         <button mat-flat-button color="primary" class="apply-btn" (click)="applyFilters()">Apply</button>
+        <button mat-stroked-button type="button" class="clear-btn" [disabled]="!hasFilters()"
+            (click)="clearFilters()">Clear</button>
     </div>
 
     @if (mapOpen()) {
@@ -75,7 +43,8 @@
             <strong>{{ matches.length | number }}</strong>
             {{ matches.length === 1 ? 'offer' : 'offers' }} from the latest scrape
             {{ matches.length === 1 ? 'matches' : 'match' }} the applied filters.
-            <span class="map-summary__note">Older listings and offers without a location are not on the map.</span>
+            <span class="map-summary__note">Older listings and offers without a location are not on the map.
+                The change and snapshot filters narrow the table only.</span>
         </p>
         @if (matches.length > 0) {
         @defer (on immediate) {
@@ -95,45 +64,59 @@
     </section>
     }
 
-    @if (properties.loading()) {
-    <div class="state-box" role="status" aria-live="polite">
-        <mat-spinner diameter="42"></mat-spinner>
-        <span class="sr-only">Loading properties</span>
-    </div>
-    } @else if (properties.error()) {
-    @let message = properties.error()!;
-    <div class="state-box error" role="alert">
-        <span>{{ message }}</span>
-        <button mat-stroked-button color="primary" (click)="retry()">Retry</button>
-    </div>
-    } @else if (properties.data()) {
-    @let res = properties.data()!;
-    @if (res.items.length === 0) {
-    <div class="state-box">No properties match the current filters.</div>
-    } @else {
-    <!-- Card view hides the sortable headers, so phones sort from here instead. -->
-    <div class="mobile-sort">
-        <mat-form-field appearance="outline" subscriptSizing="dynamic">
-            <mat-label>Sort by</mat-label>
-            <mat-select panelClass="select-panel" [value]="sortBy()" (selectionChange)="sortByColumn($event.value)">
-                <mat-option value="lastSeen">Last seen</mat-option>
+    <!--
+      Everything from here down stays mounted while a request is in flight. The table's
+      own header holds the sort buttons and the column filters, so tearing it down and
+      building it again - which is what showing the spinner in its place used to do -
+      took the focus out of the box being typed into and collapsed the panel below on
+      every Apply. Only the rows depend on the response, so only the rows are swapped.
+    -->
+
+    <!--
+      Card view hides the whole <thead>, so the sort headers and the column filters in it
+      go with it; phones get both back here instead.
+    -->
+    <div class="mobile-controls">
+        <div class="mobile-sort">
+            <mat-form-field appearance="outline" subscriptSizing="dynamic">
+                <mat-label>Sort by</mat-label>
+                <mat-select panelClass="select-panel" [value]="sortBy()" (selectionChange)="sortByColumn($event.value)">
+                    @for (col of columns; track col.key) {
+                    <mat-option [value]="col.key">{{ col.label }}</mat-option>
+                    }
+                </mat-select>
+            </mat-form-field>
+            <button mat-stroked-button type="button" class="sort-dir" (click)="toggleSortDir()"
+                [attr.aria-label]="sortDir() === 'asc' ? 'Ascending, switch to descending' : 'Descending, switch to ascending'">
+                <span aria-hidden="true">{{ sortDir() === 'asc' ? '▲ Asc' : '▼ Desc' }}</span>
+            </button>
+        </div>
+
+        <details class="mobile-filters">
+            <summary>Filter by column</summary>
+            <div class="mobile-filters__grid">
                 @for (col of columns; track col.key) {
-                <mat-option [value]="col.key">{{ col.label }}</mat-option>
+                @if (col.filter !== 'none') {
+                <div class="mobile-filters__field">
+                    <span class="mobile-filters__label" aria-hidden="true">{{ col.label }}</span>
+                    <ng-container
+                        [ngTemplateOutlet]="columnFilter"
+                        [ngTemplateOutletContext]="{ $implicit: col }"></ng-container>
+                </div>
                 }
-            </mat-select>
-        </mat-form-field>
-        <button mat-stroked-button type="button" class="sort-dir" (click)="toggleSortDir()"
-            [attr.aria-label]="sortDir() === 'asc' ? 'Ascending, switch to descending' : 'Descending, switch to ascending'">
-            <span aria-hidden="true">{{ sortDir() === 'asc' ? '▲ Asc' : '▼ Desc' }}</span>
-        </button>
+                }
+                <button mat-flat-button color="primary" type="button" class="mobile-filters__apply"
+                    (click)="applyFilters()">Apply</button>
+            </div>
+        </details>
     </div>
 
     <div class="table-wrapper">
-        <table class="results">
+        <table class="results" [attr.aria-busy]="properties.loading()">
             <thead>
                 <tr>
                     @for (col of columns; track col.key) {
-                    <th scope="col" class="sortable" [attr.aria-sort]="ariaSort(col.key)">
+                    <th scope="col" class="sortable" [class.numeric]="col.numeric" [attr.aria-sort]="ariaSort(col.key)">
                         <button type="button" class="sort-btn" (click)="sortByColumn(col.key)">
                             {{ col.label }}
                             @if (sortBy() === col.key) {
@@ -142,23 +125,69 @@
                         </button>
                     </th>
                     }
-                    <th scope="col">Change</th>
-                    <th scope="col">Snapshots</th>
                     <th scope="col"><span class="sr-only">Actions</span></th>
+                </tr>
+                <tr class="filter-row">
+                    @for (col of columns; track col.key) {
+                    <td [class.numeric]="col.numeric">
+                        <ng-container
+                            [ngTemplateOutlet]="columnFilter"
+                            [ngTemplateOutletContext]="{ $implicit: col }"></ng-container>
+                    </td>
+                    }
+                    <td class="filter-actions">
+                        <button mat-flat-button color="primary" type="button" class="filter-apply"
+                            (click)="applyFilters()">Apply</button>
+                    </td>
                 </tr>
             </thead>
             <tbody>
+                @if (properties.loading()) {
+                <tr class="state-row">
+                    <td [attr.colspan]="columns.length + 1" class="stack-full">
+                        <div class="state-cell" role="status" aria-live="polite">
+                            <mat-spinner diameter="42"></mat-spinner>
+                            <span class="sr-only">Loading properties</span>
+                        </div>
+                    </td>
+                </tr>
+                } @else if (properties.error()) {
+                @let message = properties.error()!;
+                <tr class="state-row">
+                    <td [attr.colspan]="columns.length + 1" class="stack-full">
+                        <div class="state-cell error" role="alert">
+                            <span>{{ message }}</span>
+                            <button mat-stroked-button color="primary" (click)="retry()">Retry</button>
+                        </div>
+                    </td>
+                </tr>
+                } @else if (properties.data(); as res) {
+                @if (res.items.length === 0) {
+                <tr class="state-row">
+                    <td [attr.colspan]="columns.length + 1" class="stack-full">
+                        <div class="state-cell">No properties match the current filters.</div>
+                    </td>
+                </tr>
+                }
+                <!--
+                  Titles, districts and market names are scraped Polish on an English page:
+                  lang="pl" is what makes a screen reader pronounce them as Polish. It sits on
+                  a <span> wherever the cell has a data-label, because card view prints that
+                  English label inside the cell and it would be read as Polish too.
+                -->
                 @for (row of res.items; track row.id) {
                 <tr>
-                    <td class="title-cell stack-full">{{ row.title }}</td>
+                    <td class="title-cell stack-full" lang="pl">{{ row.title }}</td>
                     <td data-label="City">{{ row.city }}</td>
-                    <td data-label="District">{{ row.district || '—' }}</td>
-                    <td data-label="Market">{{ row.market }}</td>
-                    <td data-label="Price" class="price-cell">{{ row.price | number:'1.0-0' }} PLN</td>
-                    <td data-label="Price / m²">{{ row.pricePerMeter | number:'1.0-0' }} PLN</td>
-                    <td data-label="Area">{{ row.area | number:'1.0-1' }} m²</td>
-                    <td data-label="Floor">{{ row.floor }}</td>
-                    <td data-label="Change">
+                    <td data-label="District">
+                        @if (row.district) { <span lang="pl">{{ row.district }}</span> } @else { — }
+                    </td>
+                    <td data-label="Market"><span lang="pl">{{ row.market }}</span></td>
+                    <td data-label="Price" class="price-cell numeric">{{ row.price | number:'1.0-0' }} PLN</td>
+                    <td data-label="Price / m²" class="numeric">{{ row.pricePerMeter | number:'1.0-0' }} PLN</td>
+                    <td data-label="Area" class="numeric">{{ row.area | number:'1.0-1' }} m²</td>
+                    <td data-label="Floor" class="numeric">{{ row.floor }}</td>
+                    <td data-label="Change" class="numeric">
                         @if (row.priceChange) {
                         <span class="delta" [class.down]="row.priceChange < 0" [class.up]="row.priceChange > 0">
                             <span aria-hidden="true">{{ row.priceChange < 0 ? '▼' : '▲' }}</span>
@@ -168,20 +197,58 @@
                         <span class="delta flat">—</span>
                         }
                     </td>
-                    <td class="center" data-label="Snapshots">{{ row.snapshotCount }}</td>
+                    <td class="numeric" data-label="Snapshots">{{ row.snapshotCount }}</td>
+                    <td data-label="Last seen">{{ (validDate(row.lastSeen) | date:'dd.MM.yyyy') ?? '—' }}</td>
                     <td class="actions-cell stack-full">
                         <a mat-stroked-button color="primary" routerLink="/properties/history"
                             [queryParams]="{ city: row.city, url: row.url }">History</a>
                     </td>
                 </tr>
                 }
+                }
             </tbody>
         </table>
     </div>
 
+    @if (properties.data(); as res) {
     <mat-paginator [length]="res.totalCount" [pageSize]="pageSize()" [pageIndex]="pageIndex()"
         [pageSizeOptions]="pageSizeOptions" (page)="onPage($event)" showFirstLastButtons>
     </mat-paginator>
     }
-    }
 </div>
+
+<!--
+  One column's filter control. Rendered twice - in the table header and in the panel the
+  card view shows instead - from the same definition, so the two can never drift apart.
+  Enter applies, like the Apply button next to them.
+-->
+<ng-template #columnFilter let-col>
+    @switch (col.filter) {
+    @case ('select') {
+    <!--
+      Each option says whether it is the selected one; binding [value] on the <select>
+      instead set it before the @for had created the options, so a city restored from
+      the URL matched nothing and the box showed "All" over a filtered table.
+    -->
+    <select class="col-filter" (change)="setFilter(col.value, $event)" [attr.aria-label]="'Filter by ' + col.label">
+        <option value="" [selected]="col.value() === ''">All</option>
+        @for (option of col.options; track option.value) {
+        <option [value]="option.value" [selected]="option.value === col.value()">{{ option.label }}</option>
+        }
+    </select>
+    }
+    @case ('text') {
+    <input class="col-filter" type="text" [value]="col.value()" (input)="setFilter(col.value, $event)"
+        (keydown.enter)="applyFilters()" [placeholder]="col.placeholder"
+        [attr.aria-label]="'Filter by ' + col.label">
+    }
+    @case ('range') {
+    <div class="col-filter-range">
+        <input class="col-filter" type="text" [value]="col.min()" (input)="setFilter(col.min, $event)"
+            (keydown.enter)="applyFilters()" placeholder="Min" [attr.aria-label]="col.label + ' from'">
+        <input class="col-filter" type="text" [value]="col.max()" (input)="setFilter(col.max, $event)"
+            (keydown.enter)="applyFilters()" placeholder="Max" [attr.aria-label]="col.label + ' to'">
+    </div>
+    }
+    }
+</ng-template>

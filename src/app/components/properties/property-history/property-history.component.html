@@ -9,12 +9,17 @@
     <div class="state-box error" role="alert">{{ message }}</div>
     } @else if (history.data()) {
     @let h = history.data()!;
+    <!--
+      The title, district, market, building type and description are scraped Polish on an
+      English page: lang="pl" is what makes a screen reader pronounce them as Polish. It is
+      set only where there is such text, not on the dash that stands in for none.
+    -->
     <mat-card class="header-card">
         <div class="header-main">
-            <h1 class="offer-title">{{ h.title }}</h1>
+            <h1 class="offer-title" lang="pl">{{ h.title }}</h1>
             <div class="offer-meta">
                 <span>{{ h.city }}</span>
-                @if (h.district) { <span>· {{ h.district }}</span> }
+                @if (h.district) { <span>· <span lang="pl">{{ h.district }}</span></span> }
                 @if (h.area) { <span>· {{ h.area | number:'1.0-1' }} m²</span> }
                 <span>· {{ portalName(h.webName) }}</span>
             </div>
@@ -27,13 +32,18 @@
     <mat-card class="details-card">
         <div class="card-title">Offer details</div>
         <dl class="details-grid">
+            <!-- A price of 0 is one the portal did not state; see statedPrice(). -->
             <div class="detail">
                 <dt>Current price</dt>
-                <dd class="strong">{{ h.price | number:'1.0-0' }} PLN</dd>
+                <dd class="strong">
+                    @if (statedPrice(h.price); as price) { {{ price | number:'1.0-0' }} PLN } @else { — }
+                </dd>
             </div>
             <div class="detail">
                 <dt>Price / m²</dt>
-                <dd>{{ h.pricePerMeter | number:'1.0-0' }} PLN</dd>
+                <dd>
+                    @if (statedPrice(h.pricePerMeter); as perMeter) { {{ perMeter | number:'1.0-0' }} PLN } @else { — }
+                </dd>
             </div>
             <div class="detail">
                 <dt>Area</dt>
@@ -45,11 +55,11 @@
             </div>
             <div class="detail">
                 <dt>Market</dt>
-                <dd>{{ h.market || '—' }}</dd>
+                <dd [attr.lang]="h.market ? 'pl' : null">{{ h.market || '—' }}</dd>
             </div>
             <div class="detail">
                 <dt>Building type</dt>
-                <dd>{{ h.buildingType || '—' }}</dd>
+                <dd [attr.lang]="h.buildingType ? 'pl' : null">{{ h.buildingType || '—' }}</dd>
             </div>
             <div class="detail">
                 <dt>Owner</dt>
@@ -65,7 +75,7 @@
             </div>
             <div class="detail">
                 <dt>District</dt>
-                <dd>{{ h.district || '—' }}</dd>
+                <dd [attr.lang]="h.district ? 'pl' : null">{{ h.district || '—' }}</dd>
             </div>
             <div class="detail">
                 <dt>Coordinates</dt>
@@ -100,11 +110,14 @@
             </div>
             <div class="detail">
                 <dt>First price</dt>
-                <dd>{{ h.firstPrice | number:'1.0-0' }} PLN</dd>
+                <dd>
+                    @if (statedPrice(h.firstPrice); as first) { {{ first | number:'1.0-0' }} PLN } @else { — }
+                </dd>
             </div>
             <div class="detail">
                 <dt>Total change</dt>
                 <dd>
+                    <!-- Null - a price not stated at one end - reads as a dash, like no change. -->
                     @if (h.totalPriceChange) {
                     <span class="delta" [class.down]="h.totalPriceChange < 0" [class.up]="h.totalPriceChange > 0">
                         <span aria-hidden="true">{{ h.totalPriceChange < 0 ? '▼' : '▲' }}</span>
@@ -117,10 +130,18 @@
             </div>
         </dl>
 
+        @if (otherLinks(); as others) {
+        <p class="history-note" role="note">
+            This history also includes re-posts of the flat under {{ others }} other
+            {{ others === 1 ? 'link' : 'links' }}. The offers list compares prices under one
+            link only, so its Change can differ from the total change here.
+        </p>
+        }
+
         @if (h.description) {
         <div class="detail-description">
             <div class="section-title">Description</div>
-            <p>{{ h.description }}</p>
+            <p lang="pl">{{ h.description }}</p>
         </div>
         }
     </mat-card>
@@ -131,6 +152,8 @@
         <div class="chart-wrapper">
             <canvas baseChart type="line" [data]="chartData()" [options]="chartOptions"></canvas>
         </div>
+        } @else if (h.entries.length > 0) {
+        <div class="chart-empty">No snapshot states a price to plot</div>
         } @else {
         <div class="chart-empty">No history entries yet</div>
         }
@@ -155,10 +178,18 @@
                     @for (e of h.entries; track e.date + e.url) {
                     <tr>
                         <td data-label="Date">{{ (validDate(e.date) | date:'dd.MM.yyyy HH:mm') ?? '—' }}</td>
-                        <td data-label="Price">{{ e.price | number:'1.0-0' }} PLN</td>
-                        <td data-label="Price / m²">{{ e.pricePerMeter | number:'1.0-0' }} PLN</td>
+                        <td data-label="Price">
+                            @if (statedPrice(e.price); as price) { {{ price | number:'1.0-0' }} PLN } @else { — }
+                        </td>
+                        <td data-label="Price / m²">
+                            @if (statedPrice(e.pricePerMeter); as perMeter) { {{ perMeter | number:'1.0-0' }} PLN } @else { — }
+                        </td>
                         <td data-label="Portal">{{ portalName(e.webName) }}</td>
                         <td data-label="Change">
+                            <!--
+                              Null when this snapshot or every earlier one left the price out:
+                              a dash, not a rise from 0 to the whole price or a drop back to it.
+                            -->
                             @if (e.priceChange) {
                             <span class="delta" [class.down]="e.priceChange < 0" [class.up]="e.priceChange > 0">
                                 <span aria-hidden="true">{{ e.priceChange < 0 ? '▼' : '▲' }}</span>

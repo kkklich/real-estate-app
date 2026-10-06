@@ -23,8 +23,9 @@ export class RealEstateDataService {
 
     /**
      * Charts and insights, without the map points - `includeMapPoints=false`. They are
-     * ~98% of that response (1.7 MB of 1.76 MB for Krakow) and no page draws a map before
-     * the visitor opens one, so they are requested separately by getMapPoints().
+     * over 99% of that response (megabytes for Krakow, against ~16 KB for the rest) and no
+     * page draws a map before the visitor opens one, so they are requested separately by
+     * getMapPoints().
      */
     getFullDashboard(city: cityEnum): Observable<FullDashboard> {
         return this.cached(

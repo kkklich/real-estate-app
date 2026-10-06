@@ -16,5 +16,6 @@ export interface PropertyListItem {
     lastSeen: string;
     snapshotCount: number;
     firstPrice: number;
-    priceChange: number;
+    /** Price now minus the first price; null when either is 0, a price the portal did not state. */
+    priceChange: number | null;
 }

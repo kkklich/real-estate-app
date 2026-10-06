@@ -74,6 +74,17 @@ mat-card {
     }
 }
 
+// Sits right under the details, next to the total change it qualifies.
+.history-note {
+    margin: 16px 0 0 0;
+    padding: 8px 12px;
+    border-left: 3px solid $color-brand;
+    background: $color-surface-header;
+    color: $color-text-muted;
+    font-size: 0.85rem;
+    line-height: 1.45;
+}
+
 .detail-description {
     margin-top: 20px;
     padding-top: 16px;
