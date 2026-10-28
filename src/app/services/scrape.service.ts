@@ -11,6 +11,8 @@ import { validSnapshotDate } from './snapshot-date';
 export interface ScrapeStatusResponse {
     isRunning: boolean;
     lastScrapedAt?: string | null;
+    lastRunSucceeded?: boolean | null;
+    lastError?: string | null;
 }
 
 const STORAGE_LAST_SCRAPED = 'real_estate_last_scraped';
@@ -71,7 +73,9 @@ export class ScrapeService {
                     || !response || typeof response.isRunning !== 'boolean') return;
                 this.updateLastScraped(response.lastScrapedAt);
                 this.isRunning.set(response.isRunning);
-                if (!response.isRunning && this.wasRunning) this.onScrapeCompleted();
+                if (!response.isRunning && this.wasRunning) this.onScrapeCompleted(response);
+                else if (!response.isRunning && response.lastRunSucceeded === false)
+                    this.error.set(this.failedScrapeMessage(response));
                 this.wasRunning = response.isRunning;
             },
             error: () => {
@@ -150,12 +154,21 @@ export class ScrapeService {
         this.pollTimer = null;
     }
 
-    private onScrapeCompleted(): void {
+    private onScrapeCompleted(response: ScrapeStatusResponse): void {
         this.wasRunning = false;
         this.stopPolling();
         this.dataService.invalidateAll();
+        if (response.lastRunSucceeded === false) {
+            this.showError(this.failedScrapeMessage(response));
+            return;
+        }
         // Idle alone proves neither success nor a new snapshot. Keep the server's date.
         this.snackBar.open('Pobieranie nie jest już w toku. Odświeżono dostępne dane.', 'OK', { duration: 6000 });
+    }
+
+    private failedScrapeMessage(response: ScrapeStatusResponse): string {
+        return 'Pobieranie zakończone z błędami. Zapisano dostępne dane.'
+            + (response.lastError ? ` ${response.lastError}` : '');
     }
 
     private updateLastScraped(value: string | null | undefined): void {

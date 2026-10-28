@@ -124,6 +124,25 @@ describe('ScrapeService', () => {
         http.expectNone(`${api}/scrapeStatus`);
     });
 
+    it('reports a failed source while refreshing successfully saved data', () => {
+        const service = create();
+        start(service);
+        jasmine.clock().tick(10_000);
+        http.expectOne(`${api}/scrapeStatus`).flush({
+            isRunning: false, lastRunSucceeded: false, lastError: 'OLX (Krakow): download incomplete.'
+        });
+        expect(service.isRunning()).toBeFalse();
+        expect(service.error()).toContain('OLX');
+        expect(data.invalidateAll).toHaveBeenCalledTimes(1);
+        expect(snackBar.open.calls.mostRecent().args[0]).toContain('błędami');
+    });
+
+    it('shows the last source failure when reopening the app', () => {
+        const service = create({ isRunning: false, lastRunSucceeded: false, lastError: 'OLX' });
+        expect(service.error()).toContain('OLX');
+        expect(data.invalidateAll).not.toHaveBeenCalled();
+    });
+
     it('treats a timestamp without a zone as UTC, matching database timestamps', () => {
         const service = create();
         const withZone = service.lastScraped();
