@@ -34,7 +34,7 @@ export function filterMapPoints(points: readonly MapPoint[], filters: MapPointFi
 
     return points.filter(point =>
         (market === null || fold(point.market ?? '') === market)
-        && (buildingType === null || fold(point.buildingType ?? '') === buildingType)
+        && (buildingType === null || fold(point.buildingType ?? '').replace(/ +$/, '') === buildingType)
         && (filters.private === undefined || point.private === filters.private)
         && withinStated(point.price, filters.priceMin, filters.priceMax)
         && withinStated(point.area, filters.areaMin, filters.areaMax)

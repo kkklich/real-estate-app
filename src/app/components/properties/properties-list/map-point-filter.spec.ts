@@ -32,9 +32,9 @@ describe('filterMapPoints', () => {
         expect(titles(filterMapPoints(points, { market: 'Pierwotny' }))).toEqual(['primary']);
     });
 
-    it('combines building type with either seller choice', () => {
+    it('combines seller and building type while ignoring trailing spaces as the API does', () => {
         const points = [
-            point('owner', { buildingType: 'Blok', private: true }),
+            point('owner', { buildingType: 'Blok  ', private: true }),
             point('agency', { buildingType: 'blok', private: false }),
             point('other building', { buildingType: 'kamienica', private: false })
         ];
