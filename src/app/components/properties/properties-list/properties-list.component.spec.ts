@@ -673,10 +673,10 @@ describe('PropertiesListComponent', () => {
 
             const requests = mapRequests();
             const cityOf = (request: TestRequest) => request.request.url.split('/').pop();
-            expect(requests.map(cityOf)).toEqual(jasmine.arrayWithExactContents(['Katowice', 'Krakow']));
+            expect(requests.map(cityOf)).toEqual(jasmine.arrayWithExactContents(['Silesia', 'Krakow']));
             requests.forEach(request => request.flush(mapOffers(offer(`in ${cityOf(request)}`))));
 
-            expect(mapTitles(component)).toEqual(jasmine.arrayWithExactContents(['in Katowice', 'in Krakow']));
+            expect(mapTitles(component)).toEqual(jasmine.arrayWithExactContents(['in Silesia', 'in Krakow']));
         });
 
         it('requests only the applied city and plots the offers the applied filters select', () => {
@@ -687,7 +687,7 @@ describe('PropertiesListComponent', () => {
 
             component.toggleMap();
             TestBed.tick();
-            expect(mapRequests('Katowice').length).withContext('Katowice requests').toBe(0);
+            expect(mapRequests('Silesia').length).withContext('Silesia requests').toBe(0);
             mapRequests('Krakow')[0].flush(mapOffers(
                 offer('primary', { market: 'Pierwotny' }),
                 offer('secondary', { market: 'Wtórny' })
@@ -714,11 +714,11 @@ describe('PropertiesListComponent', () => {
             TestBed.tick();
             mapRequests('Krakow')[0].flush(mapOffers(offer('in Krakow')));
 
-            applyCity(component, 'Katowice');
+            applyCity(component, 'Silesia');
 
             expect(component.mapPoints.loading()).toBeTrue();
-            mapRequests('Katowice')[0].flush(mapOffers(offer('in Katowice')));
-            expect(mapTitles(component)).toEqual(['in Katowice']);
+            mapRequests('Silesia')[0].flush(mapOffers(offer('in Silesia')));
+            expect(mapTitles(component)).toEqual(['in Silesia']);
         });
 
         // A new offer array makes the map frame itself again, throwing away the user's pan and zoom.
