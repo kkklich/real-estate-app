@@ -103,6 +103,67 @@ describe('PropertiesListComponent', () => {
     beforeEach(() => spyOn(console, 'error'));
     afterEach(() => http.verify());
 
+    it('applies a URL from the filter input and keeps it through sorting and paging until cleared', async () => {
+        const { fixture, component } = render();
+        only().flush(page('initial'));
+        const url = 'https://www.olx.pl/d/oferta/loft-IDABC.html?ref=search&x=100%25#photos';
+        const input = (fixture.nativeElement as HTMLElement).querySelector<HTMLInputElement>('[aria-label="Filter by Property URL"]')!;
+        input.value = '  ' + url + '  ';
+        input.dispatchEvent(new Event('input'));
+        component.city.set('Krakow');
+        component.website.set('0');
+        TestBed.tick();
+        expect(pending().length).toBe(0);
+        input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+        TestBed.tick();
+        const applied = only();
+        expect(applied.request.params.get('url')).toBe(url);
+        expect(new URL(applied.request.urlWithParams, 'https://example.test').searchParams.get('url')).toBe(url);
+        expect(applied.request.params.get('page')).toBe('1');
+        expect(applied.request.params.get('city')).toBe('Krakow');
+        expect(applied.request.params.get('webName')).toBe('0');
+        applied.flush(page('matching'));
+        component.mapPoints.succeed([offer('matching', { url }), offer('other')]);
+        expect(mapTitles(component)).toEqual(['matching']);
+        await fixture.whenStable();
+        expect(urlParams()['url']).toBe(url);
+        component.url.set('not-applied');
+        component.sortByColumn('price');
+        TestBed.tick();
+        const sorted = only();
+        expect(sorted.request.params.get('url')).toBe(url);
+        sorted.flush(page('sorted'));
+        component.onPage({ pageIndex: 1, pageSize: 25, length: 100 });
+        TestBed.tick();
+        const paged = only();
+        expect(paged.request.params.get('url')).toBe(url);
+        expect(paged.request.params.get('page')).toBe('2');
+        paged.flush(page('paged'));
+        component.clearFilters();
+        TestBed.tick();
+        const cleared = only();
+        expect(cleared.request.params.has('url')).toBeFalse();
+        expect(component.url()).toBe('');
+        expect(component.hasFilters()).toBeFalse();
+        cleared.flush(page('all'));
+    });
+
+    it('restores a URL search from a shared link including reserved URL characters', async () => {
+        const url = 'https://www.olx.pl/d/oferta/loft-IDABC.html?ref=search&x=100%25#photos';
+        const { fixture, component } = await renderAt('/?url=' + encodeURIComponent(url) + '&page=3');
+        const request = only();
+        expect(request.request.params.get('url')).toBe(url);
+        expect(request.request.params.get('page')).toBe('3');
+        expect(component.url()).toBe(url);
+        request.flush(page('matching'));
+        fixture.detectChanges();
+        const input = (fixture.nativeElement as HTMLElement).querySelector<HTMLInputElement>('[aria-label="Filter by Property URL"]')!;
+        expect(input.value).toBe(url);
+        expect(component.hasFilters()).toBeTrue();
+        await fixture.whenStable();
+        expect(urlParams()['url']).toBe(url);
+    });
+
     it('requests the first page, newest first', () => {
         render();
 

@@ -10,7 +10,7 @@ import { PropertyQuery } from '../../../models/propertyQuery';
  */
 export type MapPointFilters = Pick<PropertyQuery,
     'title' | 'district' | 'market' | 'buildingType' | 'private' | 'priceMin' | 'priceMax' | 'areaMin' | 'areaMax'
-    | 'pricePerMeterMin' | 'pricePerMeterMax' | 'floorMin' | 'floorMax' | 'search'>;
+    | 'pricePerMeterMin' | 'pricePerMeterMax' | 'floorMin' | 'floorMax' | 'search' | 'url'>;
 
 /** The API's English aliases for the Polish market names it stores. */
 const MARKET_ALIASES: Record<string, string> = {
@@ -31,6 +31,7 @@ export function filterMapPoints(points: readonly MapPoint[], filters: MapPointFi
     const district = substring(filters.district);
     const buildingType = filters.buildingType?.trim() ? fold(filters.buildingType.trim()) : null;
     const search = substring(filters.search);
+    const url = filters.url?.trim().toLowerCase() || null;
 
     return points.filter(point =>
         (market === null || fold(point.market ?? '') === market)
@@ -43,6 +44,7 @@ export function filterMapPoints(points: readonly MapPoint[], filters: MapPointFi
         && within(point.floor, filters.floorMin, filters.floorMax)
         && (title === null || fold(point.title ?? '').includes(title))
         && (district === null || fold(point.location?.district ?? '').includes(district))
+        && (url === null || (point.url ?? '').toLowerCase().includes(url))
         && (search === null
             || fold(point.title ?? '').includes(search)
             || fold(point.location?.district ?? '').includes(search))

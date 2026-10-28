@@ -12,6 +12,17 @@ describe('filterMapPoints', () => {
 
     const titles = (points: MapPoint[]): string[] => points.map(p => p.title);
 
+    it('matches full and partial URLs literally while combining other filters', () => {
+        const url = 'https://www.olx.pl/d/loft-IDABC?ref=100%_done&x=a+b#photos';
+        const points = [point('matching', { url, price: 400_000 }), point('other', { price: 400_000 })];
+        expect(titles(filterMapPoints(points, { url: '  ' + url.toUpperCase() + '  ' }))).toEqual(['matching']);
+        expect(titles(filterMapPoints(points, { url: 'idabc', priceMax: 500_000 }))).toEqual(['matching']);
+        expect(filterMapPoints(points, { url: 'idabc', priceMin: 500_000 })).toEqual([]);
+        expect(titles(filterMapPoints(points, { url: '%' }))).toEqual(['matching']);
+        expect(filterMapPoints(points, { url: 'absent' })).toEqual([]);
+        expect(filterMapPoints(points, { url: '   ' }).length).toBe(2);
+    });
+
     it('keeps every offer when no filter is applied', () => {
         const points = [point('a'), point('b')];
 

@@ -137,6 +137,7 @@ export class PropertiesListComponent {
     // request. The search spans title and district. All of them hold
     // the raw text of their box, bounds included - see bound().
     readonly title = signal<string>('');
+    readonly url = signal<string>('');
     readonly city = signal<string>('');
     readonly district = signal<string>('');
     readonly market = signal<string>('');
@@ -160,6 +161,7 @@ export class PropertiesListComponent {
     /** Filter controls shared by desktop and mobile, independent of display columns. */
     readonly filters: readonly TableColumn[] = [
         { key: 'title', label: 'Title', filter: 'text', value: this.title, placeholder: 'Contains…' },
+        { key: 'url', label: 'Property URL', filter: 'text', value: this.url, placeholder: 'Full URL or part of a link…' },
         {
             key: 'city', label: 'City', filter: 'select', value: this.city,
             options: this.cityList.map(city => ({ value: city, label: city }))
@@ -291,11 +293,11 @@ export class PropertiesListComponent {
     private readonly mapFilters = computed<MapPointFilters>(() => {
         const {
             title, district, market, buildingType, private: privateSeller, priceMin, priceMax, areaMin, areaMax,
-            pricePerMeterMin, pricePerMeterMax, floorMin, floorMax, search
+            pricePerMeterMin, pricePerMeterMax, floorMin, floorMax, search, url
         } = this.request();
         return {
             title, district, market, buildingType, private: privateSeller, priceMin, priceMax, areaMin, areaMax,
-            pricePerMeterMin, pricePerMeterMax, floorMin, floorMax, search
+            pricePerMeterMin, pricePerMeterMax, floorMin, floorMax, search, url
         };
     }, { equal: sameFields });
 
@@ -526,6 +528,7 @@ export class PropertiesListComponent {
             sortBy: this.sortBy(),
             sortDir: this.sortDir(),
             title: this.title() || undefined,
+            url: this.url().trim() || undefined,
             city: this.city() || undefined,
             district: this.district() || undefined,
             market: this.market() || undefined,

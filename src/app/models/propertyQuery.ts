@@ -8,6 +8,8 @@ export interface PropertyQuery {
     district?: string;
     /** Substring of the title, like `search` but on that column alone. */
     title?: string;
+    /** Case-insensitive substring of the listing URL. */
+    url?: string;
     market?: string;
     buildingType?: string;
     webName?: number;
