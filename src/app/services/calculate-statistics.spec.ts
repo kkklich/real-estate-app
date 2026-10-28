@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { PLATFORM_ID, provideZonelessChangeDetection } from '@angular/core';
+import { PLATFORM_ID, provideZonelessChangeDetection, signal } from '@angular/core';
 import { Subject } from 'rxjs';
 import { CalculateStatisticsService } from './calculate-statistics';
 import { RealEstateDataService } from './real-estate-data.service';
@@ -10,6 +10,7 @@ import { PriceDrop } from '../models/priceDrop';
 
 /** Hands out one controllable Subject per request, so a test decides when each answers. */
 class FakeRealEstateData {
+    readonly revision = signal(0);
     readonly dashboards: { city: cityEnum; response: Subject<FullDashboard> }[] = [];
     readonly drops: { city: cityEnum; response: Subject<PriceDrop[]> }[] = [];
     readonly mapPoints: { city: cityEnum; response: Subject<MapPoint[]> }[] = [];
@@ -189,6 +190,17 @@ describe('CalculateStatisticsService', () => {
         expect(fake.dashboards.length).toBe(2);
         expect(fake.drops.length).toBe(2);
         expect(service.dashboard.loading()).toBeTrue();
+    });
+
+    it('refreshes active resources when a scrape invalidates all city data', () => {
+        const service = create();
+        service.requestMapPoints();
+        TestBed.tick();
+        fake.revision.update(value => value + 1);
+        TestBed.tick();
+        expect(fake.dashboards.length).toBe(2);
+        expect(fake.drops.length).toBe(2);
+        expect(fake.mapPoints.length).toBe(2);
     });
 
     // Review finding 3: prerendering froze whatever the build machine got back into static HTML.

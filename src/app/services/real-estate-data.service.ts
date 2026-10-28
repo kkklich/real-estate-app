@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError, map, shareReplay } from 'rxjs/operators';
@@ -10,6 +10,9 @@ import { PriceDrop } from '../models/priceDrop';
 
 @Injectable({ providedIn: 'root' })
 export class RealEstateDataService {
+
+    /** Changes when a scrape replaces data for every city. Active views follow it. */
+    readonly revision = signal(0);
 
     private readonly http = inject(HttpClient);
     private readonly apiUrl = environment.apiUrl + '/api/RealEstate';
@@ -70,6 +73,14 @@ export class RealEstateDataService {
         this.mapPointsCache.delete(city);
     }
 
+    /** A multi-city scrape invalidates all resources, including cities not currently open. */
+    invalidateAll(): void {
+        this.dashboardCache.clear();
+        this.priceDropsCache.clear();
+        this.mapPointsCache.clear();
+        this.revision.update(value => value + 1);
+    }
+
     private cached<T>(
         cache: Map<cityEnum, Observable<T>>,
         city: cityEnum,
@@ -79,7 +90,8 @@ export class RealEstateDataService {
         if (!entry) {
             entry = request().pipe(
                 catchError((err: unknown) => {
-                    cache.delete(city);
+                    // An older failed request may outlive invalidateAll() and a replacement.
+                    if (cache.get(city) === entry) cache.delete(city);
                     return throwError(() => err);
                 }),
                 shareReplay({ bufferSize: 1, refCount: false })

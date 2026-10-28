@@ -1,9 +1,9 @@
 import { Component, PLATFORM_ID, computed, inject } from '@angular/core';
 import { DatePipe, DecimalPipe, isPlatformBrowser } from '@angular/common';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
-import { of } from 'rxjs';
-import { catchError, filter, map, switchMap, tap } from 'rxjs/operators';
+import { combineLatest, of } from 'rxjs';
+import { catchError, distinctUntilChanged, filter, map, startWith, switchMap, tap } from 'rxjs/operators';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -12,6 +12,8 @@ import { BaseChartDirective } from 'ng2-charts';
 import { ChartData, ChartOptions } from 'chart.js';
 import { CHART_COLORS } from '../../charts/chart-theme';
 import { PropertyListService } from '../../../services/property-list.service';
+import { validSnapshotDate } from '../../../services/snapshot-date';
+import { RealEstateDataService } from '../../../services/real-estate-data.service';
 import { AsyncResource } from '../../../services/async-resource';
 import { httpErrorMessage } from '../../../services/http-error-message';
 import { PropertyHistory } from '../../../models/propertyHistory';
@@ -40,6 +42,7 @@ export class PropertyHistoryComponent {
 
     private readonly route = inject(ActivatedRoute);
     private readonly propertyListService = inject(PropertyListService);
+    private readonly realEstateData = inject(RealEstateDataService);
 
     // Prerendering has no query params, so it used to bake "Missing city or url
     // parameter." into the static HTML for this route.
@@ -58,8 +61,12 @@ export class PropertyHistoryComponent {
      * DatePipe throws on anything it cannot convert, and one bad value from the API took
      * the whole page down with it - the chart already skipped such snapshots, the table did not.
      */
-    protected validDate(value: string | null | undefined): string | null {
+    protected validSourceDate(value: string | null | undefined): string | null {
         return value && Number.isFinite(Date.parse(value)) ? value : null;
+    }
+
+    protected validDate(value: string | null | undefined): string | null {
+        return validSnapshotDate(value);
     }
 
     /**
@@ -91,7 +98,11 @@ export class PropertyHistoryComponent {
     constructor() {
         // queryParams never completes; without takeUntilDestroyed this subscription
         // outlived every visit to the page.
-        this.route.queryParams.pipe(
+        const revision = toObservable(this.realEstateData.revision).pipe(
+            startWith(this.realEstateData.revision()), distinctUntilChanged()
+        );
+        combineLatest([this.route.queryParams, revision]).pipe(
+            map(([params]) => params),
             filter(() => this.isBrowser),
             map(params => ({
                 city: params['city'] as string | undefined,
@@ -132,7 +143,7 @@ export class PropertyHistoryComponent {
     protected readonly points = computed(() =>
         (this.history.data()?.entries ?? [])
             .map(entry => ({
-                at: Date.parse(entry.date),
+                at: Date.parse(validSnapshotDate(entry.date) ?? ''),
                 price: entry.price,
                 pricePerMeter: entry.pricePerMeter
             }))

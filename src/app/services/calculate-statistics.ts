@@ -46,7 +46,7 @@ export class CalculateStatisticsService {
 
     constructor() {
         // A fresh object every time, so a reload re-emits even when the city has not changed.
-        const request = computed(() => ({ city: this.city(), nonce: this.reloadNonce() }));
+        const request = computed(() => ({ city: this.city(), nonce: this.reloadNonce(), revision: this.realEstateService.revision() }));
 
         this.wire(
             request,
@@ -68,6 +68,7 @@ export class CalculateStatisticsService {
             city: this.city(),
             nonce: this.reloadNonce(),
             mapNonce: this.mapNonce(),
+            revision: this.realEstateService.revision(),
             wanted: this.mapWanted()
         }));
 

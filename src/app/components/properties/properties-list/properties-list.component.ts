@@ -13,6 +13,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { PropertyListService } from '../../../services/property-list.service';
+import { validSnapshotDate } from '../../../services/snapshot-date';
 import { RealEstateDataService } from '../../../services/real-estate-data.service';
 import { AsyncResource } from '../../../services/async-resource';
 import { httpErrorMessage } from '../../../services/http-error-message';
@@ -311,7 +312,9 @@ export class PropertiesListComponent {
         this.restore(arrival);
         this.request.set(this.buildQuery());
 
-        toObservable(this.request).pipe(
+        const listRequest = computed(() => ({ query: this.request(), revision: this.realEstateData.revision() }));
+        toObservable(listRequest).pipe(
+            map(({ query }) => query),
             filter(() => this.isBrowser),
             tap(query => this.writeUrl(query)),
             tap(() => this.properties.start()),
@@ -401,7 +404,7 @@ export class PropertiesListComponent {
      * it, as it once did on the history page.
      */
     protected validDate(value: string | null | undefined): string | null {
-        return value && Number.isFinite(Date.parse(value)) ? value : null;
+        return validSnapshotDate(value);
     }
 
     /** Value for aria-sort, so a screen reader announces the current sort. */
@@ -493,7 +496,8 @@ export class PropertiesListComponent {
         const trigger = computed(() => ({
             open: this.mapOpen(),
             cities: this.mapCities(),
-            nonce: this.mapReloadNonce()
+            nonce: this.mapReloadNonce(),
+            revision: this.realEstateData.revision()
         }));
 
         toObservable(trigger).pipe(

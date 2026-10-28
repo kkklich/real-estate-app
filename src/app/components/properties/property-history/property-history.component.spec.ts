@@ -4,6 +4,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ActivatedRoute, Params } from '@angular/router';
 import { BehaviorSubject } from 'rxjs';
+import { RealEstateDataService } from '../../../services/real-estate-data.service';
 import { PropertyHistoryComponent } from './property-history.component';
 import { PropertyHistory, PropertyHistoryEntry } from '../../../models/propertyHistory';
 
@@ -76,6 +77,20 @@ describe('PropertyHistoryComponent', () => {
         expect(el.querySelector('.offer-title')?.textContent).toContain('Two rooms in Podgorze');
     });
 
+    it('reloads the open offer after a scrape without requiring navigation', () => {
+        const { fixture, component } = render({ city: 'Krakow', url: 'https://example.com/offer' });
+        forCity('Krakow').flush(history([entry('2026-09-10T10:00:00', 700_000)]));
+        fixture.detectChanges();
+        TestBed.inject(RealEstateDataService).invalidateAll();
+        TestBed.tick();
+        const refreshed = forCity('Krakow');
+        expect(refreshed.request.params.get('url')).toBe('https://example.com/offer');
+        refreshed.flush(history([entry('2026-10-28T10:00:00', 650_000)]));
+        expect(component.history.data()?.entries[0].price).toBe(650_000);
+        fixture.detectChanges();
+        http.expectNone(r => r.url.includes('/propertyHistory/'));
+    });
+
     it('drops snapshots with unparseable dates and plots the rest oldest first', () => {
         const { fixture, component } = render({ city: 'Krakow', url: 'https://example.com/offer' });
 
@@ -88,6 +103,7 @@ describe('PropertyHistoryComponent', () => {
 
         const points = component['points']();
         expect(points.map(p => p.price)).toEqual([750_000, 700_000]);
+        expect(points.map(p => p.at)).toEqual([Date.parse('2026-06-02T10:00:00Z'), Date.parse('2026-09-10T10:00:00Z')]);
     });
 
     // Found by the test above: the chart skipped bad dates, but DatePipe in the table and the

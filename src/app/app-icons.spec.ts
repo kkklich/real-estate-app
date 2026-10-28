@@ -13,7 +13,7 @@ describe('provideAppIcons', () => {
     it('registers every icon the templates use as an inline SVG', async () => {
         const registry = TestBed.inject(MatIconRegistry);
 
-        expect(APP_ICON_NAMES).toEqual(jasmine.arrayWithExactContents(['error_outline', 'map', 'trending_flat']));
+        expect(APP_ICON_NAMES).toEqual(jasmine.arrayWithExactContents(['cloud_download', 'error_outline', 'map', 'refresh', 'schedule', 'trending_flat']));
         for (const name of APP_ICON_NAMES) {
             const svg = await firstValueFrom(registry.getNamedSvgIcon(name));
             expect(svg.tagName.toLowerCase()).withContext(name).toBe('svg');

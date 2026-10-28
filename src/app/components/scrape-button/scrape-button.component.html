@@ -1,0 +1,27 @@
+<div class="scrape-container">
+    <div class="scrape-info" [matTooltip]="'Data ostatniego pobrania ofert nieruchomości'">
+        <mat-icon svgIcon="schedule" class="scrape-info__icon" aria-hidden="true"></mat-icon>
+        <span class="scrape-info__label">Ostatnio pobrane:</span>
+        <span class="scrape-info__value">{{ lastScrapedDisplay() }}</span>
+    </div>
+
+    <button mat-flat-button class="scrape-btn"
+        [disabled]="scrapeService.isRunning() || scrapeService.isStarting()"
+        (click)="scrapeService.triggerScrape()"
+        [matTooltip]="'Uruchom pobieranie danych nieruchomości (z portali OLX, Morizon, Nieruchomości-online)'">
+        @if (scrapeService.isStarting() || scrapeService.isRunning()) {
+            <mat-spinner diameter="16" class="scrape-btn__spinner"></mat-spinner>
+        } @else {
+            <mat-icon svgIcon="cloud_download" class="scrape-btn__icon" aria-hidden="true"></mat-icon>
+        }
+        <span class="scrape-btn__text">
+            @if (scrapeService.isStarting()) {
+                Uruchamianie...
+            } @else if (scrapeService.isRunning()) {
+                Pobieranie w toku...
+            } @else {
+                Pobierz dane
+            }
+        </span>
+    </button>
+</div>

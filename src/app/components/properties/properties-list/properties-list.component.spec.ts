@@ -1,6 +1,6 @@
 import { DeferBlockBehavior, TestBed } from '@angular/core/testing';
 import { PLATFORM_ID, provideZonelessChangeDetection } from '@angular/core';
-import { Location } from '@angular/common';
+import { Location, formatDate } from '@angular/common';
 import { SpyLocation, provideLocationMocks } from '@angular/common/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, TestRequest, provideHttpClientTesting } from '@angular/common/http/testing';
@@ -10,6 +10,7 @@ import { PropertiesListComponent } from './properties-list.component';
 import { PagedResult } from '../../../models/pagedResult';
 import { PropertyListItem } from '../../../models/propertyListItem';
 import { MapPoint } from '../../../models/mapPoint';
+import { RealEstateDataService } from '../../../services/real-estate-data.service';
 
 describe('PropertiesListComponent', () => {
 
@@ -596,7 +597,8 @@ describe('PropertiesListComponent', () => {
 
         const cells = [...el.querySelectorAll('td[data-label="Latest snapshot"]')].map(cell => cell.textContent!.trim());
         // A value DatePipe cannot read shows a dash, and does not break the table.
-        expect(cells).toEqual(['21.09.2026 21:01', '—']);
+        expect(cells).toEqual([formatDate('2026-09-21T21:01:08.298453Z', 'dd.MM.yyyy HH:mm', 'en-US'), '—']);
+        expect(el.querySelector('time')?.getAttribute('datetime')).toBe('2026-09-21T21:01:08.298453Z');
 
         // The list opens sorted by it, newest first, and its header shows that.
         const header = [...el.querySelectorAll('thead th')].find(th => th.textContent!.includes('Latest snapshot'));
@@ -659,6 +661,29 @@ describe('PropertiesListComponent', () => {
         component.toggleMap();
         TestBed.tick();
         expect(mapRequests().length).withContext('map requests on the server').toBe(0);
+    });
+
+    it('refreshes the list and open map after a scrape while preserving applied filters', async () => {
+        const { component } = await renderAt('/?webName=0&priceMax=900000&sortBy=price&page=2');
+        only().flush(page('old'));
+        component.toggleMap();
+        TestBed.tick();
+        mapRequests().forEach(request => request.flush(mapOffers(offer('old'))));
+        component.title.set('not yet applied');
+        TestBed.inject(RealEstateDataService).invalidateAll();
+        TestBed.tick();
+        const refreshed = only();
+        expect(refreshed.request.params.get('webName')).toBe('0');
+        expect(refreshed.request.params.get('priceMax')).toBe('900000');
+        expect(refreshed.request.params.get('page')).toBe('2');
+        expect(refreshed.request.params.get('sortBy')).toBe('price');
+        expect(refreshed.request.params.has('title')).toBeFalse();
+        refreshed.flush(page('fresh'));
+        const maps = mapRequests();
+        expect(maps.length).toBe(2);
+        maps.forEach(request => request.flush(mapOffers(offer('fresh'))));
+        expect(component.title()).toBe('not yet applied');
+        expect(mapTitles(component)).toEqual(['fresh', 'fresh']);
     });
 
     describe('map', () => {

@@ -2,6 +2,8 @@
     <span class="app-nav__brand">Real Estate</span>
     <a mat-button routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Dashboard</a>
     <a mat-button routerLink="/properties" routerLinkActive="active">Properties</a>
+    <span class="app-nav__spacer"></span>
+    <app-scrape-button></app-scrape-button>
 </mat-toolbar>
 
 <router-outlet></router-outlet>

@@ -129,4 +129,43 @@ describe('RealEstateDataService', () => {
         expect(drops).toEqual([{ title: 'new drop' }]);
         expect(mapPoints).toEqual([{ url: 'https://example.com/fresh' }]);
     });
+    it('invalidates all cities and publishes one refresh event after a multi-city scrape', () => {
+        for (const city of Object.values(cityEnum)) {
+            service.getFullDashboard(city).subscribe();
+            service.getPriceDrops(city).subscribe();
+            service.getMapPoints(city).subscribe();
+            http.expectOne(dashboardUrl(city)).flush(payload('old'));
+            http.expectOne(r => dropsFor(city)(r.url)).flush([]);
+            http.expectOne(mapPointsUrl(city)).flush([]);
+        }
+        service.invalidateAll();
+        expect(service.revision()).toBe(1);
+        for (const city of Object.values(cityEnum)) {
+            let dashboard: FullDashboard | undefined;
+            service.getFullDashboard(city).subscribe(value => dashboard = value);
+            service.getPriceDrops(city).subscribe();
+            service.getMapPoints(city).subscribe();
+            http.expectOne(dashboardUrl(city)).flush(payload('fresh'));
+            http.expectOne(r => dropsFor(city)(r.url)).flush([]);
+            http.expectOne(mapPointsUrl(city)).flush([]);
+            expect(dashboard).toEqual(payload('fresh'));
+        }
+    });
+
+    it('keeps the fresh cache when an older in-flight request fails after a scrape', () => {
+        service.getFullDashboard(cityEnum.Krakow).subscribe({ error: () => {} });
+        const old = http.expectOne(dashboardUrl(cityEnum.Krakow));
+        service.invalidateAll();
+        let first: FullDashboard | undefined;
+        let second: FullDashboard | undefined;
+        service.getFullDashboard(cityEnum.Krakow).subscribe(value => first = value);
+        const fresh = http.expectOne(dashboardUrl(cityEnum.Krakow));
+        old.flush('down', { status: 503, statusText: 'Unavailable' });
+        service.getFullDashboard(cityEnum.Krakow).subscribe(value => second = value);
+        http.expectNone(dashboardUrl(cityEnum.Krakow));
+        fresh.flush(payload('fresh'));
+        expect(first).toEqual(payload('fresh'));
+        expect(second).toEqual(payload('fresh'));
+    });
+
 });
