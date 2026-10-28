@@ -9,7 +9,7 @@ import { PropertyQuery } from '../../../models/propertyQuery';
  * table alone.
  */
 export type MapPointFilters = Pick<PropertyQuery,
-    'title' | 'district' | 'market' | 'priceMin' | 'priceMax' | 'areaMin' | 'areaMax'
+    'title' | 'district' | 'market' | 'buildingType' | 'private' | 'priceMin' | 'priceMax' | 'areaMin' | 'areaMax'
     | 'pricePerMeterMin' | 'pricePerMeterMax' | 'floorMin' | 'floorMax' | 'search'>;
 
 /** The API's English aliases for the Polish market names it stores. */
@@ -29,10 +29,13 @@ export function filterMapPoints(points: readonly MapPoint[], filters: MapPointFi
     const market = marketFilter ? fold(MARKET_ALIASES[marketFilter.toLowerCase()] ?? marketFilter) : null;
     const title = substring(filters.title);
     const district = substring(filters.district);
+    const buildingType = filters.buildingType?.trim() ? fold(filters.buildingType.trim()) : null;
     const search = substring(filters.search);
 
     return points.filter(point =>
         (market === null || fold(point.market ?? '') === market)
+        && (buildingType === null || fold(point.buildingType ?? '') === buildingType)
+        && (filters.private === undefined || point.private === filters.private)
         && withinStated(point.price, filters.priceMin, filters.priceMax)
         && withinStated(point.area, filters.areaMin, filters.areaMax)
         && withinStated(point.pricePerMeter, filters.pricePerMeterMin, filters.pricePerMeterMax)

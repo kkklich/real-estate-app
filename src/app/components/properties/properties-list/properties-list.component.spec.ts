@@ -237,9 +237,8 @@ describe('PropertiesListComponent', () => {
             cleared.flush(page('all'));
         });
 
-        // The filters live in the table's own header. Replacing the table with a spinner
-        // while the request ran took them - and the focus in one of them - with it.
-        it('keeps the header and its filters mounted while the request is in flight', () => {
+        // Filters remain mounted while rows are loading.
+        it('keeps the header and the filter panel mounted while the request is in flight', () => {
             const { fixture, component } = render();
             only().flush(page('x'));
             fixture.detectChanges();
@@ -252,7 +251,7 @@ describe('PropertiesListComponent', () => {
 
             expect(component.properties.loading()).toBeTrue();
             expect(el.querySelector('thead')).withContext('header torn down').toBe(header);
-            expect(el.querySelector<HTMLInputElement>('.filter-row [aria-label="Filter by Title"]')?.value).toBe('loft');
+            expect(el.querySelector<HTMLInputElement>('.filter-grid [aria-label="Filter by Title"]')?.value).toBe('loft');
             expect(el.querySelector('.state-row .state-cell')).withContext('spinner row').not.toBeNull();
             expect(el.querySelectorAll('tbody tr:not(.state-row)').length).toBe(0);
 
@@ -262,23 +261,22 @@ describe('PropertiesListComponent', () => {
             expect(el.querySelectorAll('tbody tr').length).toBe(1);
         });
 
-        it('renders a control per column in the header, and applies what is typed into one', () => {
+        it('renders filters above the table, and applies what is typed into one', () => {
             const { fixture, component } = render();
             only().flush(page('x'));
             fixture.detectChanges();
             const el = fixture.nativeElement as HTMLElement;
 
-            // Every column carries a sort button and, unless it has no filter, at least one
-            // filter box; the trailing actions column carries the Apply button instead.
             expect(el.querySelectorAll('thead .sort-btn').length).toBe(component.columns.length);
-            expect(el.querySelectorAll('.filter-row td').length).toBe(component.columns.length + 1);
-            const filtered = component.columns.filter(col => col.filter !== 'none').length;
-            const ranges = component.columns.filter(col => col.filter === 'range').length;
-            expect(el.querySelectorAll('.filter-row .col-filter').length).toBe(filtered + ranges);
-            // The phone panel lists only the columns it has a control for.
-            expect(el.querySelectorAll('.mobile-filters__field').length).toBe(filtered);
+            const filtered = component.filters.filter(col => col.filter !== 'none').length;
+            const ranges = component.filters.filter(col => col.filter === 'range').length;
+            expect(el.querySelectorAll('.filter-grid .col-filter').length).toBe(filtered + ranges);
+            expect(el.querySelectorAll('.filter-field').length).toBe(filtered);
+            expect(el.querySelector('.filter-row')).toBeNull();
+            expect(el.querySelector('.filters')!.compareDocumentPosition(el.querySelector('table')!)
+                & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
 
-            const titleBox = el.querySelector<HTMLInputElement>('.filter-row .col-filter')!;
+            const titleBox = el.querySelector<HTMLInputElement>('.filter-grid .col-filter')!;
             expect(titleBox.getAttribute('aria-label')).toBe('Filter by Title');
             titleBox.value = 'loft';
             titleBox.dispatchEvent(new Event('input'));
@@ -286,12 +284,94 @@ describe('PropertiesListComponent', () => {
             expect(component.title()).toBe('loft');
             expect(pending().length).withContext('requested before Apply').toBe(0);
 
-            el.querySelector<HTMLButtonElement>('.filter-row .filter-apply')!.click();
+            el.querySelector<HTMLButtonElement>('.filter-toolbar .apply-btn')!.click();
             fixture.detectChanges();
             const applied = only();
             expect(applied.request.params.get('title')).toBe('loft');
             applied.flush(page('loft'));
         });
+    });
+
+    it('restores building type and seller, sends false, and clears both filters', async () => {
+        const { fixture, component } = await renderAt('/?buildingType=blok&private=false');
+        const restored = only();
+        expect(restored.request.params.get('buildingType')).toBe('blok');
+        expect(restored.request.params.get('private')).toBe('false');
+        restored.flush(page('agency'));
+        fixture.detectChanges();
+        const el = fixture.nativeElement as HTMLElement;
+        expect(el.querySelector<HTMLSelectElement>('[aria-label="Filter by Seller"]')!.value).toBe('false');
+        await fixture.whenStable();
+        expect(urlParams()['private']).toBe('false');
+        component.clearFilters();
+        TestBed.tick();
+        const cleared = only();
+        expect(cleared.request.params.has('private')).toBeFalse();
+        expect(cleared.request.params.has('buildingType')).toBeFalse();
+        expect(component.seller()).toBe('');
+        expect(component.buildingType()).toBe('');
+        cleared.flush(page('all'));
+    });
+
+    for (const [website, id] of [['OLX', '0'], ['Morizon', '1'], ['Nieruchomości-online', '2']]) {
+        it('filters by ' + website + ' and preserves the selected website through sorting and paging', async () => {
+            const { fixture, component } = await renderAt('/?webName=' + id);
+            const restored = only();
+            expect(restored.request.params.get('webName')).toBe(id);
+            restored.flush(page('website'));
+            fixture.detectChanges();
+            const select = (fixture.nativeElement as HTMLElement)
+                .querySelector<HTMLSelectElement>('[aria-label="Filter by Website"]')!;
+            expect(select.value).toBe(id);
+            expect(select.selectedOptions[0].textContent!.trim()).toBe(website);
+            expect(component.hasFilters()).toBeTrue();
+            await fixture.whenStable();
+            expect(urlParams()['webName']).toBe(id);
+
+            component.sortByColumn('price');
+            TestBed.tick();
+            const sorted = only();
+            expect(sorted.request.params.get('webName')).toBe(id);
+            sorted.flush(page('sorted'));
+            component.onPage({ pageIndex: 1, pageSize: 25, length: 100 });
+            TestBed.tick();
+            const paged = only();
+            expect(paged.request.params.get('webName')).toBe(id);
+            paged.flush(page('paged'));
+
+            component.clearFilters();
+            TestBed.tick();
+            const cleared = only();
+            expect(cleared.request.params.has('webName')).toBeFalse();
+            expect(component.website()).toBe('');
+            expect(component.hasFilters()).toBeFalse();
+            cleared.flush(page('all'));
+        });
+    }
+
+    it('applies a website selected in the filter panel, including OLX with id zero', () => {
+        const { fixture } = render();
+        only().flush(page('all'));
+        fixture.detectChanges();
+        const el = fixture.nativeElement as HTMLElement;
+        const select = el.querySelector<HTMLSelectElement>('[aria-label="Filter by Website"]')!;
+        select.value = '0';
+        select.dispatchEvent(new Event('change'));
+        fixture.detectChanges();
+        expect(pending().length).toBe(0);
+        el.querySelector<HTMLButtonElement>('.apply-btn')!.click();
+        TestBed.tick();
+        const applied = only();
+        expect(applied.request.params.get('webName')).toBe('0');
+        applied.flush(page('olx'));
+    });
+
+    it('ignores an unknown website in a shared link', async () => {
+        const { component } = await renderAt('/?webName=99');
+        const request = only();
+        expect(request.request.params.has('webName')).toBeFalse();
+        expect(component.website()).toBe('');
+        request.flush(page('all'));
     });
 
     // Reloading the page or sharing its link used to drop every filter, the sort and the page.
@@ -326,7 +406,7 @@ describe('PropertiesListComponent', () => {
             // dropping it; so do the paginator and the sort header.
             const el = fixture.nativeElement as HTMLElement;
             const box = (label: string) =>
-                el.querySelector<HTMLInputElement | HTMLSelectElement>(`.filter-row [aria-label="${label}"]`)?.value;
+                el.querySelector<HTMLInputElement | HTMLSelectElement>(`.filter-grid [aria-label="${label}"]`)?.value;
             expect(box('Filter by Title')).toBe('kawalerka');
             expect(box('Filter by City')).toBe('Krakow');
             expect(box('Filter by Market')).toBe('primary');
@@ -466,7 +546,7 @@ describe('PropertiesListComponent', () => {
         // filter that caused it most needs to be reachable.
         fixture.detectChanges();
         expect(el.querySelector('.state-cell.error')?.textContent).toContain('The server failed');
-        expect(el.querySelector<HTMLInputElement>('.filter-row [aria-label="Filter by Title"]')?.value).toBe('loft');
+        expect(el.querySelector<HTMLInputElement>('.filter-grid [aria-label="Filter by Title"]')?.value).toBe('loft');
         expect(el.querySelector('mat-paginator')).withContext('paginator without a result').toBeNull();
 
         el.querySelector<HTMLButtonElement>('.state-cell.error button')!.click();
@@ -514,12 +594,12 @@ describe('PropertiesListComponent', () => {
         fixture.detectChanges();
         const el = fixture.nativeElement as HTMLElement;
 
-        const cells = [...el.querySelectorAll('td[data-label="Last seen"]')].map(cell => cell.textContent!.trim());
+        const cells = [...el.querySelectorAll('td[data-label="Latest snapshot"]')].map(cell => cell.textContent!.trim());
         // A value DatePipe cannot read shows a dash, and does not break the table.
-        expect(cells).toEqual(['21.09.2026', '—']);
+        expect(cells).toEqual(['21.09.2026 21:01', '—']);
 
         // The list opens sorted by it, newest first, and its header shows that.
-        const header = [...el.querySelectorAll('thead th')].find(th => th.textContent!.includes('Last seen'));
+        const header = [...el.querySelectorAll('thead th')].find(th => th.textContent!.includes('Latest snapshot'));
         expect(header?.getAttribute('aria-sort')).toBe('descending');
         expect(header?.querySelector('.sort-arrow')?.textContent).toBe('▼');
     });
@@ -541,7 +621,7 @@ describe('PropertiesListComponent', () => {
     });
 
     // Scraped Polish on an English page: without lang, a screen reader spells it out in English.
-    it('marks scraped titles, districts and market names as Polish, but not their English labels', () => {
+    it('combines the location, omits removed columns, and preserves Polish pronunciation', () => {
         const { fixture } = render();
         const row = (id: string, district: string) => ({
             id, title: `Mieszkanie ${id}`, url: `https://example.com/${id}`, city: 'Krakow',
@@ -555,12 +635,15 @@ describe('PropertiesListComponent', () => {
 
         const [withDistrict, withoutDistrict] = [...(fixture.nativeElement as HTMLElement).querySelectorAll('tbody tr')];
         const polish = (tr: Element) => [...tr.querySelectorAll('[lang="pl"]')].map(node => node.textContent!.trim());
-        expect(polish(withDistrict)).toEqual(['Mieszkanie a', 'Podgórze', 'Wtórny']);
-        // The dash that stands in for no district is not Polish text.
-        expect(polish(withoutDistrict)).toEqual(['Mieszkanie b', 'Wtórny']);
+        expect(polish(withDistrict)).toEqual(['Mieszkanie a', 'Krakow, Podgórze']);
+        // No trailing separator when the district is missing.
+        expect(polish(withoutDistrict)).toEqual(['Mieszkanie b', 'Krakow']);
 
         // Card view prints each cell's data-label inside the cell, so lang stays off the
-        // cell itself wherever there is one - the English "District" is not Polish.
+        // cell itself wherever there is one - the English "Location" is not Polish.
+        expect(withDistrict.querySelector('td[data-label="Market"]')).toBeNull();
+        expect(withDistrict.querySelector('td[data-label="Floor"]')).toBeNull();
+        expect(withDistrict.children.length).toBe(9);
         const labelled = withDistrict.querySelectorAll('td[data-label][lang]');
         expect(labelled.length).withContext('labelled cells marked as Polish').toBe(0);
     });
@@ -711,7 +794,7 @@ describe('PropertiesListComponent', () => {
             fixture.detectChanges();
             expect(summary()).toBe('4 offers from the latest scrape match the applied filters. '
                 + 'Older listings and offers without a location are not on the map. '
-                + 'The change and snapshot filters narrow the table only.');
+                + 'The website, change and snapshot filters narrow the table only.');
             expect((await fixture.getDeferBlocks()).length).withContext('map blocks with offers').toBe(1);
 
             fixture.componentInstance.priceMax.set('1');

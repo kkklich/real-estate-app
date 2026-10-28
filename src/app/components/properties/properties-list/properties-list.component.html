@@ -8,22 +8,32 @@
         </button>
     </div>
 
-    <!--
-      One filter control per column lives in the table's own header row (and, where the
-      table becomes cards, in the panel below). What is left here is the search that spans
-      two columns at once, and the buttons that commit or empty the whole set.
-    -->
-    <div class="filters">
-        <mat-form-field appearance="outline" subscriptSizing="dynamic" class="search">
-            <mat-label>Search</mat-label>
-            <input matInput type="text" [ngModel]="search()" (ngModelChange)="search.set($event)"
-                (keydown.enter)="applyFilters()" placeholder="Title or district…">
-        </mat-form-field>
-
-        <button mat-flat-button color="primary" class="apply-btn" (click)="applyFilters()">Apply</button>
-        <button mat-stroked-button type="button" class="clear-btn" [disabled]="!hasFilters()"
-            (click)="clearFilters()">Clear</button>
-    </div>
+    <section class="filters" aria-label="Property filters">
+        <div class="filter-toolbar">
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="search">
+                <mat-label>Search</mat-label>
+                <input matInput type="text" [ngModel]="search()" (ngModelChange)="search.set($event)"
+                    (keydown.enter)="applyFilters()" placeholder="Title or district…">
+            </mat-form-field>
+            <button mat-flat-button color="primary" type="button" class="apply-btn" (click)="applyFilters()">Apply filters</button>
+            <button mat-stroked-button type="button" class="clear-btn" [disabled]="!hasFilters()"
+                (click)="clearFilters()">Clear</button>
+        </div>
+        <div class="filter-grid">
+            @for (col of filters; track col.key) {
+            @if (col.filter !== 'none') {
+            <div class="filter-field">
+                <span class="filter-label" aria-hidden="true">{{ col.label }}</span>
+                <ng-container [ngTemplateOutlet]="columnFilter"
+                    [ngTemplateOutletContext]="{ $implicit: col }"></ng-container>
+                @if (col.key === 'buildingType') {
+                <span class="filter-hint">Exact type as listed</span>
+                }
+            </div>
+            }
+            }
+        </div>
+    </section>
 
     @if (mapOpen()) {
     <section id="properties-map" class="map-panel" aria-labelledby="properties-map-title">
@@ -44,7 +54,7 @@
             {{ matches.length === 1 ? 'offer' : 'offers' }} from the latest scrape
             {{ matches.length === 1 ? 'matches' : 'match' }} the applied filters.
             <span class="map-summary__note">Older listings and offers without a location are not on the map.
-                The change and snapshot filters narrow the table only.</span>
+                The website, change and snapshot filters narrow the table only.</span>
         </p>
         @if (matches.length > 0) {
         @defer (on immediate) {
@@ -64,18 +74,6 @@
     </section>
     }
 
-    <!--
-      Everything from here down stays mounted while a request is in flight. The table's
-      own header holds the sort buttons and the column filters, so tearing it down and
-      building it again - which is what showing the spinner in its place used to do -
-      took the focus out of the box being typed into and collapsed the panel below on
-      every Apply. Only the rows depend on the response, so only the rows are swapped.
-    -->
-
-    <!--
-      Card view hides the whole <thead>, so the sort headers and the column filters in it
-      go with it; phones get both back here instead.
-    -->
     <div class="mobile-controls">
         <div class="mobile-sort">
             <mat-form-field appearance="outline" subscriptSizing="dynamic">
@@ -92,23 +90,6 @@
             </button>
         </div>
 
-        <details class="mobile-filters">
-            <summary>Filter by column</summary>
-            <div class="mobile-filters__grid">
-                @for (col of columns; track col.key) {
-                @if (col.filter !== 'none') {
-                <div class="mobile-filters__field">
-                    <span class="mobile-filters__label" aria-hidden="true">{{ col.label }}</span>
-                    <ng-container
-                        [ngTemplateOutlet]="columnFilter"
-                        [ngTemplateOutletContext]="{ $implicit: col }"></ng-container>
-                </div>
-                }
-                }
-                <button mat-flat-button color="primary" type="button" class="mobile-filters__apply"
-                    (click)="applyFilters()">Apply</button>
-            </div>
-        </details>
     </div>
 
     <div class="table-wrapper">
@@ -126,19 +107,6 @@
                     </th>
                     }
                     <th scope="col"><span class="sr-only">Actions</span></th>
-                </tr>
-                <tr class="filter-row">
-                    @for (col of columns; track col.key) {
-                    <td [class.numeric]="col.numeric">
-                        <ng-container
-                            [ngTemplateOutlet]="columnFilter"
-                            [ngTemplateOutletContext]="{ $implicit: col }"></ng-container>
-                    </td>
-                    }
-                    <td class="filter-actions">
-                        <button mat-flat-button color="primary" type="button" class="filter-apply"
-                            (click)="applyFilters()">Apply</button>
-                    </td>
                 </tr>
             </thead>
             <tbody>
@@ -170,7 +138,7 @@
                 </tr>
                 }
                 <!--
-                  Titles, districts and market names are scraped Polish on an English page:
+                  Titles and locations are scraped Polish on an English page:
                   lang="pl" is what makes a screen reader pronounce them as Polish. It sits on
                   a <span> wherever the cell has a data-label, because card view prints that
                   English label inside the cell and it would be read as Polish too.
@@ -178,15 +146,14 @@
                 @for (row of res.items; track row.id) {
                 <tr>
                     <td class="title-cell stack-full" lang="pl">{{ row.title }}</td>
-                    <td data-label="City">{{ row.city }}</td>
-                    <td data-label="District">
-                        @if (row.district) { <span lang="pl">{{ row.district }}</span> } @else { — }
+                    <td data-label="Location">
+                        @if (row.city || row.district) {
+                        <span lang="pl">{{ row.city }}{{ row.city && row.district ? ', ' : '' }}{{ row.district }}</span>
+                        } @else { — }
                     </td>
-                    <td data-label="Market"><span lang="pl">{{ row.market }}</span></td>
                     <td data-label="Price" class="price-cell numeric">{{ row.price | number:'1.0-0' }} PLN</td>
                     <td data-label="Price / m²" class="numeric">{{ row.pricePerMeter | number:'1.0-0' }} PLN</td>
                     <td data-label="Area" class="numeric">{{ row.area | number:'1.0-1' }} m²</td>
-                    <td data-label="Floor" class="numeric">{{ row.floor }}</td>
                     <td data-label="Change" class="numeric">
                         @if (row.priceChange) {
                         <span class="delta" [class.down]="row.priceChange < 0" [class.up]="row.priceChange > 0">
@@ -198,7 +165,11 @@
                         }
                     </td>
                     <td class="numeric" data-label="Snapshots">{{ row.snapshotCount }}</td>
-                    <td data-label="Last seen">{{ (validDate(row.lastSeen) | date:'dd.MM.yyyy') ?? '—' }}</td>
+                    <td data-label="Latest snapshot">
+                        @if (validDate(row.lastSeen); as snapshot) {
+                        <time [attr.datetime]="snapshot">{{ snapshot | date:'dd.MM.yyyy HH:mm' }}</time>
+                        } @else { — }
+                    </td>
                     <td class="actions-cell stack-full">
                         <a mat-stroked-button color="primary" routerLink="/properties/history"
                             [queryParams]="{ city: row.city, url: row.url }">History</a>
@@ -217,11 +188,7 @@
     }
 </div>
 
-<!--
-  One column's filter control. Rendered twice - in the table header and in the panel the
-  card view shows instead - from the same definition, so the two can never drift apart.
-  Enter applies, like the Apply button next to them.
--->
+<!-- Shared controls for the filters above the table. Enter applies the current values. -->
 <ng-template #columnFilter let-col>
     @switch (col.filter) {
     @case ('select') {

@@ -21,6 +21,7 @@ import { PagedResult } from '../../../models/pagedResult';
 import { PropertyQuery } from '../../../models/propertyQuery';
 import { MapPoint } from '../../../models/mapPoint';
 import { cityEnum } from '../../../models/enums/city.enum';
+import { WebName, portalName } from '../../../models/enums/web-name.enum';
 import { MapViewComponent } from '../../charts/map-view/map-view.component';
 import { MapPointFilters, filterMapPoints } from './map-point-filter';
 
@@ -132,12 +133,15 @@ export class PropertiesListComponent {
     readonly pageSizeOptions = [10, 25, 50];
 
     // Filters - uncommitted until Apply is pressed, so a half-typed bound never becomes a
-    // request. Each one belongs to a column; `search` spans two of them. All of them hold
+    // request. The search spans title and district. All of them hold
     // the raw text of their box, bounds included - see bound().
     readonly title = signal<string>('');
     readonly city = signal<string>('');
     readonly district = signal<string>('');
     readonly market = signal<string>('');
+    readonly buildingType = signal<string>('');
+    readonly seller = signal<string>('');
+    readonly website = signal<string>('');
     readonly priceMin = signal<string>('');
     readonly priceMax = signal<string>('');
     readonly pricePerMeterMin = signal<string>('');
@@ -152,21 +156,27 @@ export class PropertiesListComponent {
     readonly snapshotCountMax = signal<string>('');
     readonly search = signal<string>('');
 
-    /**
-     * One entry per column of the table, in the order they are rendered. The header row,
-     * the filter row under it and the phone-sized sort picker are all built from this, so
-     * a column cannot end up missing from the sort picker, or filtered into the wrong column.
-     */
-    readonly columns: readonly TableColumn[] = [
+    /** Filter controls shared by desktop and mobile, independent of display columns. */
+    readonly filters: readonly TableColumn[] = [
         { key: 'title', label: 'Title', filter: 'text', value: this.title, placeholder: 'Contains…' },
         {
             key: 'city', label: 'City', filter: 'select', value: this.city,
             options: this.cityList.map(city => ({ value: city, label: city }))
         },
+        {
+            key: 'webName', label: 'Website', filter: 'select', value: this.website,
+            options: [WebName.Olx, WebName.Morizon, WebName.NieruchomosciOnline]
+                .map(value => ({ value: String(value), label: portalName(value) }))
+        },
         { key: 'district', label: 'District', filter: 'text', value: this.district, placeholder: 'Contains…' },
         {
             key: 'market', label: 'Market', filter: 'select', value: this.market,
             options: [{ value: 'primary', label: 'Primary' }, { value: 'secondary', label: 'Secondary' }]
+        },
+        { key: 'buildingType', label: 'Building type', filter: 'text', value: this.buildingType, placeholder: 'e.g. blok, kamienica' },
+        {
+            key: 'private', label: 'Seller', filter: 'select', value: this.seller,
+            options: [{ value: 'true', label: 'Private owner' }, { value: 'false', label: 'Agency / business' }]
         },
         { key: 'price', label: 'Price', filter: 'range', numeric: true, min: this.priceMin, max: this.priceMax },
         {
@@ -185,17 +195,25 @@ export class PropertiesListComponent {
         },
         // When a scrape last found the offer listed: the date of its newest snapshot. It is
         // the default sort, newest first. No filter box, because the API takes no date bounds.
-        { key: 'lastSeen', label: 'Last seen', filter: 'none' }
+        { key: 'lastSeen', label: 'Latest snapshot', filter: 'none' }
     ];
 
-    /**
-     * Every filter box by the name the query string gives it: the search, then each
-     * column's box - or, for a range, its two bounds, which the API names after the
-     * column's sort key. Clear empties these and a link to the page restores them.
-     */
+    /** Visible columns, also used by the mobile sort picker. */
+    readonly columns: readonly ColumnBase[] = [
+        { key: 'title', label: 'Title' },
+        { key: 'city', label: 'Location' },
+        { key: 'price', label: 'Price', numeric: true },
+        { key: 'pricePerMeter', label: 'Price / m²', numeric: true },
+        { key: 'area', label: 'Area', numeric: true },
+        { key: 'priceChange', label: 'Change', numeric: true },
+        { key: 'snapshotCount', label: 'Snapshots', numeric: true },
+        { key: 'lastSeen', label: 'Latest snapshot' }
+    ];
+
+    /** Clear and shared links cover all filters, including fields without a table column. */
     private readonly filterFields: readonly FilterField[] = [
         { name: 'search', box: this.search, accepts: () => true },
-        ...this.columns.flatMap((column): FilterField[] => {
+        ...this.filters.flatMap((column): FilterField[] => {
             switch (column.filter) {
                 case 'range': {
                     const isBound = (raw: string) => bound(raw) !== undefined;
@@ -217,7 +235,7 @@ export class PropertiesListComponent {
         })
     ];
 
-    /** What the table can be sorted by: every column, the default (Last seen) included. */
+    /** What the table can be sorted by: every visible column, the latest snapshot included. */
     private readonly sortKeys: readonly string[] = this.columns.map(column => column.key);
 
     // Sort
@@ -271,11 +289,11 @@ export class PropertiesListComponent {
      */
     private readonly mapFilters = computed<MapPointFilters>(() => {
         const {
-            title, district, market, priceMin, priceMax, areaMin, areaMax,
+            title, district, market, buildingType, private: privateSeller, priceMin, priceMax, areaMin, areaMax,
             pricePerMeterMin, pricePerMeterMax, floorMin, floorMax, search
         } = this.request();
         return {
-            title, district, market, priceMin, priceMax, areaMin, areaMax,
+            title, district, market, buildingType, private: privateSeller, priceMin, priceMax, areaMin, areaMax,
             pricePerMeterMin, pricePerMeterMax, floorMin, floorMax, search
         };
     }, { equal: sameFields });
@@ -507,6 +525,9 @@ export class PropertiesListComponent {
             city: this.city() || undefined,
             district: this.district() || undefined,
             market: this.market() || undefined,
+            buildingType: this.buildingType().trim() || undefined,
+            webName: bound(this.website()),
+            private: this.seller() === '' ? undefined : this.seller() === 'true',
             priceMin: bound(this.priceMin()),
             priceMax: bound(this.priceMax()),
             pricePerMeterMin: bound(this.pricePerMeterMin()),

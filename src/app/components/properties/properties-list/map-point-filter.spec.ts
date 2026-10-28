@@ -32,6 +32,17 @@ describe('filterMapPoints', () => {
         expect(titles(filterMapPoints(points, { market: 'Pierwotny' }))).toEqual(['primary']);
     });
 
+    it('combines building type with either seller choice', () => {
+        const points = [
+            point('owner', { buildingType: 'Blok', private: true }),
+            point('agency', { buildingType: 'blok', private: false }),
+            point('other building', { buildingType: 'kamienica', private: false })
+        ];
+        expect(titles(filterMapPoints(points, { buildingType: ' BLOK ', private: false }))).toEqual(['agency']);
+        expect(titles(filterMapPoints(points, { buildingType: 'blok', private: true }))).toEqual(['owner']);
+        expect(titles(filterMapPoints(points, { private: false }))).toEqual(['agency', 'other building']);
+    });
+
     it('treats price and area bounds as inclusive', () => {
         const points = [
             point('cheap', { price: 300_000, area: 30 }),

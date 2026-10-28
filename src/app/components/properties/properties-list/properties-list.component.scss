@@ -55,38 +55,49 @@
     overflow: hidden;
 }
 
-// The per-column filters live in the table's own header now; what is left here is the
-// search that spans two columns at once, and the buttons that commit or empty the whole
-// set. subscriptSizing="dynamic" drops the empty hint space under the field, so the
-// buttons can stretch to its exact height.
 .filters {
+    padding: 16px;
+    margin-bottom: 20px;
+    border: 1px solid $color-subtle;
+    border-radius: 12px;
+    background: #fff;
+}
+
+.filter-toolbar {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto auto;
-    align-items: center;
+    align-items: stretch;
     gap: 12px;
-    margin-bottom: 20px;
+    margin-bottom: 16px;
 
-    mat-form-field {
-        width: 100%;
-        min-width: 0;
-    }
-
-    .apply-btn,
-    .clear-btn {
-        align-self: stretch;
-        height: auto;
-        min-height: 48px;
-        padding: 0 28px;
-    }
+    mat-form-field { width: 100%; min-width: 0; }
+    button { height: auto; min-height: 48px; padding: 0 24px; }
 
     @media (max-width: $breakpoint-tablet) {
         grid-template-columns: repeat(2, minmax(0, 1fr));
-
-        .search {
-            grid-column: 1 / -1;
-        }
+        .search { grid-column: 1 / -1; }
     }
 }
+
+.filter-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 14px 16px;
+
+    @media (max-width: $breakpoint-phone) {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+.filter-field { min-width: 0; }
+.filter-label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: $color-text-muted;
+}
+.filter-hint { font-size: 0.72rem; color: $color-text-muted; }
 
 .state-box {
     display: flex;
@@ -162,29 +173,12 @@ table.results {
         margin-left: 4px;
     }
 
-    // The second header row: one filter control per column, under its own heading.
-    .filter-row td {
-        padding: 0 8px 10px 8px;
-        background: $color-surface-header;
-        vertical-align: top;
-    }
-
-    .filter-actions {
-        text-align: right;
-    }
-
-    .filter-apply {
-        min-height: 32px;
-        padding: 0 14px;
-        line-height: 32px;
-    }
-
     tbody tr:hover {
         background: $color-surface-hover;
     }
 
     // Loading, failed and empty all render as one row under the header, so the sort
-    // buttons and the column filters stay put while the rows underneath them change.
+    // buttons stay put while the rows underneath them change.
     // The flex box is a wrapper, not the cell: a <td> that is not a table-cell any
     // more stops honouring its own colspan.
     .state-cell {
@@ -219,12 +213,13 @@ table.results {
     }
 }
 
-// Deliberately not a mat-form-field: a header row needs a control a third of the height
-// Material gives one, and there are up to two per column.
+// Compact controls keep the expanded filter panel easy to scan.
 .col-filter {
     width: 100%;
     min-width: 0;
-    padding: 5px 7px;
+    padding: 9px 10px;
+    min-height: 38px;
+    box-sizing: border-box;
     font: inherit;
     font-size: 0.82rem;
     color: $color-text;
@@ -242,23 +237,17 @@ table.results {
     }
 }
 
-// The two bounds of a range share their column, so the header stays one row tall. They
-// are kept narrow on purpose: six range columns two boxes wide is what decides whether
-// the table fits a 1600px screen, and the Actions column - the History links, and the
-// Apply button next to them - is what falls off the right when it does not.
+// Inclusive minimum and maximum bounds share a field.
 .col-filter-range {
     display: flex;
     gap: 4px;
 
     .col-filter {
-        // An explicit width, not a minimum: an <input> is 20 characters wide by default,
-        // and that intrinsic width - not the values under it - is what sized these six
-        // columns at 178px each and pushed the table past a 1600px screen.
         width: 52px;
         flex: 1 1 52px;
         min-width: 0;
         text-align: right;
-        padding: 5px 4px;
+        padding: 9px 6px;
     }
 }
 
@@ -312,44 +301,6 @@ mat-paginator {
             height: auto;
             min-width: 96px;
         }
-    }
-
-    // The card view hides the whole <thead>, and with it the column filters; this brings
-    // the same controls back, collapsed so they do not push the offers off the screen.
-    .mobile-filters {
-        margin-bottom: 14px;
-        border: 1px solid $color-subtle;
-        border-radius: 12px;
-        background: #fff;
-
-        summary {
-            padding: 12px 16px;
-            font-weight: 600;
-            color: $color-text;
-            cursor: pointer;
-        }
-    }
-
-    .mobile-filters__grid {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 12px;
-        padding: 0 16px 16px 16px;
-    }
-
-    .mobile-filters__label {
-        display: block;
-        margin-bottom: 4px;
-        font-size: 0.72rem;
-        font-weight: 600;
-        letter-spacing: 0.04em;
-        text-transform: uppercase;
-        color: $color-text-faint;
-    }
-
-    .mobile-filters__apply {
-        grid-column: 1 / -1;
-        min-height: 44px;
     }
 
     // One card per offer; the wrapper's white panel and shadow would box the cards in.
