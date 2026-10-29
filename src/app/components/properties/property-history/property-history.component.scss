@@ -222,3 +222,38 @@ table.results {
         font-size: 1.15rem;
     }
 }
+.summary-card {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 18px;
+    border-top: 3px solid $color-brand;
+    div { display: flex; flex-direction: column; gap: 8px; }
+    span, p { color: $color-text-muted; font-size: .85rem; }
+    strong { font-size: 1.3rem; color: $color-brand; overflow-wrap: anywhere; }
+    p { grid-column: 1 / -1; margin: 0; }
+}
+.activity-note { color: $color-text-muted; font-size: .9rem; line-height: 1.6; }
+.timeline {
+    list-style: none;
+    padding: 0;
+    margin: 12px 0 0;
+    li { display: flex; gap: 24px; padding: 16px 0 16px 18px; border-left: 3px solid $color-subtle; }
+    time { min-width: 85px; color: $color-text-muted; font-size: .9rem; }
+    li > div { display: flex; flex-wrap: wrap; gap: 8px 16px; }
+    .price-drop { border-left-color: $color-positive; }
+    a { color: $color-brand; }
+}
+.related-links {
+    list-style: none; padding: 0; margin: 0;
+    li { padding: 12px 0; border-bottom: 1px solid $color-subtle; overflow-wrap: anywhere; }
+    a { color: $color-brand; font-weight: 600; }
+    span { display: block; color: $color-text-muted; margin-top: 6px; font-size: .85rem; }
+}
+@media (max-width: $breakpoint-tablet) {
+    .summary-card { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .timeline li { gap: 12px; }
+}
+@media (max-width: $breakpoint-phone) {
+    .summary-card strong { font-size: 1.05rem; }
+    .timeline li { flex-direction: column; gap: 6px; }
+}

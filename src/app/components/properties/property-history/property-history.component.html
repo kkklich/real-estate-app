@@ -25,8 +25,59 @@
             </div>
         </div>
         <a mat-stroked-button color="primary" [href]="h.url" target="_blank" rel="noopener noreferrer">
-            Open original offer
+            Otwórz ogłoszenie źródłowe
         </a>
+    </mat-card>
+
+    <mat-card class="summary-card" aria-label="Najważniejsze informacje">
+        <div><span>Cena z ostatniego zapisu</span><strong>@if (statedPrice(h.price); as price) { {{ price | number:'1.0-0' }} PLN } @else { — }</strong></div>
+        <div><span>Cena za m²</span><strong>@if (statedPrice(h.pricePerMeter); as price) { {{ price | number:'1.0-0' }} PLN } @else { — }</strong></div>
+        <div><span>Powierzchnia</span><strong>@if (h.area > 0) { {{ h.area | number:'1.0-1' }} m² } @else { — }</strong></div>
+        <div><span>Ostatnio zauważone</span><strong>{{ (validDate(h.lastSeen) | date:'dd.MM.yyyy') ?? '—' }}</strong></div>
+        <p>To dane z zapisanej historii. Dostępność sprawdź w ogłoszeniu źródłowym.</p>
+    </mat-card>
+    <mat-card class="chart-card">
+        <div class="card-title">Historia ceny</div>
+        @if (points().length > 0) {
+        <div class="chart-wrapper">
+            <canvas role="img" aria-label="Historia ceny. Dokładne wartości w tabeli poniżej." baseChart type="line" [data]="chartData()" [options]="chartOptions"></canvas>
+        </div>
+        } @else if (h.entries.length > 0) {
+        <div class="chart-empty">No snapshot states a price to plot</div>
+        } @else {
+        <div class="chart-empty">No history entries yet</div>
+        }
+    </mat-card>
+
+
+    <mat-card class="activity-card">
+        <h2 class="card-title">Oś zdarzeń</h2>
+        <p class="activity-note">Daty oznaczają pobranie danych. Nowy link po ostatnim zapisie wcześniejszych ogłoszeń na tym samym portalu może oznaczać ponowne wystawienie; dopasowanie nie jest pewne.</p>
+        <ol class="timeline">
+            @for (event of activity().events; track $index) {
+            <li [class.price-drop]="event.kind === 'drop'">
+                <time [attr.datetime]="event.date">{{ event.date | date:'dd.MM.yyyy' }}</time>
+                <div><strong>@switch (event.kind) {
+                    @case ('first') { Pierwsze zauważenie }
+                    @case ('drop') { Obniżka ceny }
+                    @case ('repost') { Ponownie znalezione pod nowym linkiem }
+                }</strong>
+                @if (event.change != null) { <span class="delta down">{{ event.change | number:'1.0-0' }} PLN</span> }
+                @if (event.url) { <a [href]="event.url" target="_blank" rel="noopener noreferrer">{{ portalName(event.webName) }} ↗</a> }
+                </div>
+            </li>
+            } @empty { <li>Brak zapisów z poprawną datą.</li> }
+        </ol>
+    </mat-card>
+    <mat-card class="related-card">
+        <h2 class="card-title">Prawdopodobnie ta sama oferta na innych portalach</h2>
+        <p class="activity-note">Dopasowania wynikają z podobieństwa danych i mogą dotyczyć innego mieszkania. Sprawdź szczegóły. Linki historyczne mogą być nieaktywne. Każdy link ma osobną serię na wykresie; niższa cena na innym portalu nie musi oznaczać obniżki.</p>
+        <ul class="related-links">
+            @for (offer of activity().related; track offer.key) {
+            <li><a [href]="offer.url" target="_blank" rel="noopener noreferrer">{{ portalName(offer.webName) }} — zobacz ogłoszenie ↗</a>
+                <span>Pierwsze zauważenie: {{ (offer.date | date:'dd.MM.yyyy') ?? 'data nieznana' }}</span></li>
+            } @empty { <li>Nie znaleziono dopasowanych ofert na innych portalach w zapisanej historii.</li> }
+        </ul>
     </mat-card>
 
     <mat-card class="details-card">
@@ -143,19 +194,6 @@
             <div class="section-title">Description</div>
             <p lang="pl">{{ h.description }}</p>
         </div>
-        }
-    </mat-card>
-
-    <mat-card class="chart-card">
-        <div class="card-title">Price history</div>
-        @if (points().length > 0) {
-        <div class="chart-wrapper">
-            <canvas baseChart type="line" [data]="chartData()" [options]="chartOptions"></canvas>
-        </div>
-        } @else if (h.entries.length > 0) {
-        <div class="chart-empty">No snapshot states a price to plot</div>
-        } @else {
-        <div class="chart-empty">No history entries yet</div>
         }
     </mat-card>
 

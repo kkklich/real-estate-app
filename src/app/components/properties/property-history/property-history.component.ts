@@ -20,6 +20,7 @@ import { PropertyHistory } from '../../../models/propertyHistory';
 import { portalName } from '../../../models/enums/web-name.enum';
 import { provideAppCharts } from '../../charts/chart-setup';
 import { normalizeOfferUrl } from './offer-url';
+import { offerActivity, offerKey } from './offer-activity';
 
 @Component({
     selector: 'app-property-history',
@@ -95,6 +96,11 @@ export class PropertyHistoryComponent {
         return others.size;
     });
 
+    protected readonly activity = computed(() => {
+        const history = this.history.data();
+        return history ? offerActivity(history) : { events: [], related: [] };
+    });
+
     constructor() {
         // queryParams never completes; without takeUntilDestroyed this subscription
         // outlived every visit to the page.
@@ -145,50 +151,51 @@ export class PropertyHistoryComponent {
             .map(entry => ({
                 at: Date.parse(validSnapshotDate(entry.date) ?? ''),
                 price: entry.price,
-                pricePerMeter: entry.pricePerMeter
+                pricePerMeter: entry.pricePerMeter,
+                key: offerKey(entry.url, entry.webName),
+                webName: entry.webName
             }))
             .filter(point => Number.isFinite(point.at) && this.statedPrice(point.price) !== null)
             .sort((a, b) => a.at - b.at)
     );
 
-    /**
-     * One line: price / m² is the price over a fixed area, so a second line only ever
-     * ran parallel to the first. It is kept on each point and shown in the tooltip.
-     */
+    /** Keep source offers separate so cross-portal prices never draw a fake change. */
     protected readonly chartData = computed<ChartData>(() => {
-        const points = this.points();
+        const groups = new Map<string, ReturnType<typeof this.points>>();
+        for (const point of this.points()) {
+            // Unknown links are isolated: there is no evidence they belong to one series.
+            const key = point.key || 'unknown:' + groups.size;
+            const group = groups.get(key) ?? [];
+            group.push(point);
+            groups.set(key, group);
+        }
         return {
-            datasets: [
-                {
-                    type: 'line' as const,
-                    label: 'Price (PLN)',
-                    data: points.map(p => ({ x: p.at, y: p.price, perMeter: p.pricePerMeter })),
-                    borderColor: CHART_COLORS.brand,
-                    backgroundColor: 'rgba(35, 67, 146, 0.08)',
-                    pointRadius: 3,
-                    pointHoverRadius: 5,
-                    // Monotone never overshoots: a plain tension curve bulged above two
-                    // equal prices and drew a rise that never happened.
-                    cubicInterpolationMode: 'monotone',
-                    fill: true
-                }
-            ]
+            datasets: Array.from(groups.values()).map((points, index) => ({
+                type: 'line' as const,
+                label: portalName(points[0].webName) + ' · ogłoszenie ' + (index + 1),
+                data: points.map(p => ({ x: p.at, y: p.price, perMeter: p.pricePerMeter })),
+                borderColor: [CHART_COLORS.brand, '#12776d', '#9c4b87', '#a16b19'][index % 4],
+                pointRadius: 3,
+                pointHoverRadius: 5,
+                stepped: true,
+                fill: false
+            }))
         };
     });
 
     protected readonly chartOptions: ChartOptions = {
         responsive: true,
         maintainAspectRatio: false,
-        interaction: { mode: 'index', intersect: false },
+        interaction: { mode: 'nearest', intersect: false },
         plugins: {
-            legend: { display: false },
+            legend: { display: true, position: 'bottom' },
             tooltip: {
                 callbacks: {
                     title: items => new Date(items[0].parsed.x).toLocaleString('pl-PL'),
-                    label: ctx => ` Price: ${ctx.parsed.y?.toLocaleString('pl-PL')} PLN`,
+                    label: ctx => ` Cena: ${ctx.parsed.y?.toLocaleString('pl-PL')} PLN`,
                     afterLabel: ctx => {
                         const perMeter = (ctx.raw as { perMeter?: number }).perMeter;
-                        return perMeter == null ? '' : ` Price / m²: ${perMeter.toLocaleString('pl-PL')} PLN`;
+                        return perMeter == null ? '' : ` Cena za m²: ${perMeter.toLocaleString('pl-PL')} PLN`;
                     }
                 }
             }

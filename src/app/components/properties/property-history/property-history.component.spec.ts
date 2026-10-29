@@ -286,4 +286,43 @@ describe('PropertyHistoryComponent', () => {
 
         expect(queryParams.observed).toBeFalse();
     });
+    it('renders the summary, timeline and probable cross-portal links', () => {
+        const { fixture, el } = render({ city: 'Krakow', url: 'https://example.com/offer' });
+        forCity('Krakow').flush(history([
+            entry('2026-06-02T10:00:00', 750000, 0, 'https://example.com/offer'),
+            entry('2026-07-02T10:00:00', 700000, -50000, 'https://example.com/offer'),
+            { ...entry('2026-07-03T10:00:00', 690000, 0, 'https://www.olx.pl/offer'), webName: 0 }
+        ]));
+        fixture.detectChanges();
+        expect(text(el.querySelector('.summary-card'))).toContain('Cena z ostatniego zapisu');
+        expect(text(el.querySelector('.timeline'))).toContain('Pierwsze zauważenie');
+        expect(text(el.querySelector('.timeline'))).toContain('Obniżka ceny');
+        expect(el.querySelector('.related-links a')?.getAttribute('href')).toBe('https://www.olx.pl/offer');
+        expect(el.querySelector('.related-links a')?.getAttribute('rel')).toBe('noopener noreferrer');
+    });
+
+    it('plots different source offers separately so a cross-portal price difference is not a drop', () => {
+        const { fixture, component } = render({ city: 'Krakow', url: 'https://example.com/offer' });
+        forCity('Krakow').flush(history([
+            entry('2026-06-01T10:00:00', 750000, 0, 'https://example.com/offer'),
+            { ...entry('2026-06-02T10:00:00', 650000, -100000, 'https://www.olx.pl/a'), webName: 0 },
+            entry('2026-07-01T10:00:00', 700000, 50000, 'https://example.com/offer?utm=1')
+        ]));
+        fixture.detectChanges();
+        const datasets = component['chartData']().datasets;
+        expect(datasets.length).toBe(2);
+        expect(datasets[0].data.length).toBe(2);
+        expect(datasets[1].data.length).toBe(1);
+        expect(component['activity']().events.filter(e => e.kind === 'drop').map(e => e.change)).toEqual([-50000]);
+    });
+
+    it('renders a related link with an unknown date without losing the offer', () => {
+        const { fixture, el } = render({ city: 'Krakow', url: 'https://example.com/offer' });
+        forCity('Krakow').flush(history([
+            { ...entry('bad date', 650000, 0, 'https://www.olx.pl/a'), webName: 0 }
+        ]));
+        fixture.detectChanges();
+        expect(text(el.querySelector('.related-links'))).toContain('data nieznana');
+        expect(el.querySelector('.related-links a')?.getAttribute('href')).toBe('https://www.olx.pl/a');
+    });
 });
