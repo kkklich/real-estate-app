@@ -6,6 +6,7 @@ import { environment } from '../../enviroments/environment';
 import { cityEnum } from '../models/enums/city.enum';
 import { FullDashboard } from '../models/fullDashboard';
 import { MapPoint } from '../models/mapPoint';
+import { CompactMapPoints, decodeMapPoints } from '../models/compact-map-points';
 import { PriceDrop } from '../models/priceDrop';
 
 @Injectable({ providedIn: 'root' })
@@ -48,8 +49,9 @@ export class RealEstateDataService {
         return this.cached(
             this.mapPointsCache,
             city,
-            () => this.http.get<MapPoint[]>(`${this.apiUrl}/getMapPoints/${city}`)
-                .pipe(map(points => points ?? []))
+            () => this.http.get<CompactMapPoints | MapPoint[]>(`${this.apiUrl}/getMapPoints/${city}`, {
+                params: new HttpParams().set('compact', true)
+            }).pipe(map(decodeMapPoints))
         );
     }
 

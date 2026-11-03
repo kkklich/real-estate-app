@@ -18,6 +18,22 @@ const MARKET_ALIASES: Record<string, string> = {
     secondary: 'Wtórny'
 };
 
+// Points are immutable within a downloaded batch. Normalize each one once; a
+// WeakMap releases the strings when a scrape replaces that batch.
+const normalized = new WeakMap<MapPoint, { market: string; building: string; title: string; district: string; url: string }>();
+function textOf(point: MapPoint) {
+    let text = normalized.get(point);
+    if (!text) {
+        text = {
+            market: fold(point.market ?? ''), building: fold(point.buildingType ?? '').replace(/ +$/, ''),
+            title: fold(point.title ?? ''), district: fold(point.location?.district ?? ''),
+            url: (point.url ?? '').toLowerCase()
+        };
+        normalized.set(point, text);
+    }
+    return text;
+}
+
 /**
  * The offers the properties list would return for `filters`, filtered the way the API's
  * GetPagedAsync does it: inclusive bounds, a whole market name, and a substring search
@@ -33,22 +49,23 @@ export function filterMapPoints(points: readonly MapPoint[], filters: MapPointFi
     const search = substring(filters.search);
     const url = filters.url?.trim().toLowerCase() || null;
 
-    return points.filter(point =>
-        (market === null || fold(point.market ?? '') === market)
-        && (buildingType === null || fold(point.buildingType ?? '').replace(/ +$/, '') === buildingType)
+    return points.filter(point => {
+        const text = textOf(point);
+        return (market === null || text.market === market)
+        && (buildingType === null || text.building === buildingType)
         && (filters.private === undefined || point.private === filters.private)
         && withinStated(point.price, filters.priceMin, filters.priceMax)
         && withinStated(point.area, filters.areaMin, filters.areaMax)
         && withinStated(point.pricePerMeter, filters.pricePerMeterMin, filters.pricePerMeterMax)
         // Floor 0 is the ground floor, a real value, so it is bounded as it stands.
         && within(point.floor, filters.floorMin, filters.floorMax)
-        && (title === null || fold(point.title ?? '').includes(title))
-        && (district === null || fold(point.location?.district ?? '').includes(district))
-        && (url === null || (point.url ?? '').toLowerCase().includes(url))
+        && (title === null || text.title.includes(title))
+        && (district === null || text.district.includes(district))
+        && (url === null || text.url.includes(url))
         && (search === null
-            || fold(point.title ?? '').includes(search)
-            || fold(point.location?.district ?? '').includes(search))
-    );
+            || text.title.includes(search)
+            || text.district.includes(search));
+    });
 }
 
 /**
