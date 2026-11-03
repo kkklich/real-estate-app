@@ -12,7 +12,7 @@ describe('RealEstateDataService', () => {
     const api = `${environment.apiUrl}/api/RealEstate`;
     // The map points are requested separately, so the dashboard asks the API to leave them out.
     const dashboardUrl = (city: cityEnum) => `${api}/getFullDashboard/${city}?includeMapPoints=false`;
-    const mapPointsUrl = (city: cityEnum) => `${api}/getMapPoints/${city}`;
+    const mapPointsUrl = (city: cityEnum) => `${api}/getMapPoints/${city}?compact=true`;
     const dropsFor = (city: cityEnum) => (url: string) => url === `${api}/getPriceDrops/${city}`;
     const payload = (label: string) => ({ label }) as unknown as FullDashboard;
 
@@ -82,6 +82,20 @@ describe('RealEstateDataService', () => {
         http.expectOne(mapPointsUrl(cityEnum.Silesia)).flush(null);
 
         expect(mapPoints).toEqual([]);
+    });
+
+    it('decodes the compact transport before sharing it between maps', () => {
+        let points: unknown;
+        service.getMapPoints(cityEnum.Silesia).subscribe(value => points = value);
+        http.expectOne(mapPointsUrl(cityEnum.Silesia)).flush({
+            version: 1, markets: ['Pierwotny'], buildingTypes: ['Blok'], districts: ['Katowice / Centrum'],
+            points: [['/flat', 'Mieszkanie', 500000, 10000, 0, 0, 0, 50, false, 50.2, 19, 0]]
+        });
+        expect(points).toEqual([{
+            url: '/flat', title: 'Mieszkanie', price: 500000, pricePerMeter: 10000, floor: 0,
+            market: 'Pierwotny', buildingType: 'Blok', area: 50, private: false,
+            location: { lat: 50.2, lon: 19, district: 'Katowice / Centrum' }
+        }]);
     });
 
     it('sends the price-drop limit as a query parameter', () => {
