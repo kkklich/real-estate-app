@@ -16,6 +16,7 @@ import { PriceHistogramChartComponent } from '../charts/price-histogram-chart/pr
 import { DistrictPriceChartComponent } from '../charts/district-price-chart/district-price-chart.component';
 import { SplitDonutChartComponent } from '../charts/split-donut-chart/split-donut-chart.component';
 import { provideAppCharts } from '../charts/chart-setup';
+import { LiveOlxDownloadComponent } from '../live-olx-download/live-olx-download.component';
 
 @Component({
     selector: 'app-dashboard',
@@ -32,7 +33,8 @@ import { provideAppCharts } from '../charts/chart-setup';
         PriceTrendChartComponent,
         PriceHistogramChartComponent,
         DistrictPriceChartComponent,
-        SplitDonutChartComponent
+        SplitDonutChartComponent,
+        LiveOlxDownloadComponent
     ],
     // Registers Chart.js for the five charts below; see chart-setup.ts.
     providers: [provideAppCharts()],

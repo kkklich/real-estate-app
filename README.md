@@ -57,6 +57,14 @@ Chorzów, Tychy, Mikołów, Mysłowice and Sosnowiec, shown as one market: its
 districts read "Tychy – Osiedle Z", and on `/properties` each offer keeps its own
 city.
 
+**Download live OLX JSON**, beside the city switch, saves the selected area's
+first page of live OLX results as a JSON file. It calls
+`/api/RealEstate/marketplaceListings?city=...&source=olx&page=1` and never writes
+to the database. Silesia downloads one page per constituent city; the file
+includes pagination and any partial-source errors. Otodom offers syndicated
+through OLX are included. If the API requires a key, the button reuses the
+existing `SCRAPE_API_KEY` setting or prompts once after an unauthorized response.
+
 ## How the state works
 
 One service, one signal graph — no NgRx, no RxJS state.

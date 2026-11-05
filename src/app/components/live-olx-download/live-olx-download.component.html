@@ -1,0 +1,17 @@
+<button mat-stroked-button type="button" [disabled]="download.downloading()"
+    (click)="download.download(city())"
+    matTooltip="Download one live results page per city as JSON. Includes Otodom offers listed on OLX.">
+    @if (download.downloading()) {
+    <mat-spinner diameter="18" aria-hidden="true"></mat-spinner>
+    } @else {
+    <mat-icon svgIcon="cloud_download" aria-hidden="true"></mat-icon>
+    }
+    {{ download.downloading() ? 'Downloading OLX…' : 'Download live OLX JSON' }}
+</button>
+<span class="download-hint">First page · {{ city() === 'Krakow' ? 'Kraków' : 'Silesia' }}</span>
+@if (download.error(); as error) {
+<span class="download-error" role="alert">{{ error }}</span>
+}
+@if (download.message(); as message) {
+<span class="download-message" role="status" aria-live="polite">{{ message }}</span>
+}

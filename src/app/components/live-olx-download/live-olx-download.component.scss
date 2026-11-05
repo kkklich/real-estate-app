@@ -1,0 +1,36 @@
+@use 'tokens' as *;
+
+:host {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    margin: 16px 0 16px auto;
+    padding-left: 20px;
+    max-width: 380px;
+}
+
+button {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    white-space: normal;
+}
+
+.download-hint,
+.download-message,
+.download-error {
+    font-size: 0.8rem;
+    line-height: 1.4;
+    color: $color-text-muted;
+}
+
+.download-error { color: $color-danger; }
+
+@media (max-width: $breakpoint-tablet) {
+    :host {
+        max-width: 100%;
+        margin: 0 0 16px;
+        padding: 0 16px;
+    }
+}

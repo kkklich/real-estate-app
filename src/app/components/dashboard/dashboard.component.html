@@ -12,6 +12,7 @@
 } @else {
 <div class="filter-container">
     <app-search-filter [city]="stats.city()" (cityChange)="onCityChange($event)"></app-search-filter>
+    <app-live-olx-download [city]="stats.city()"></app-live-olx-download>
 </div>
 
 <div class="dashboard-container">
